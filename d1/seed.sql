@@ -2,6 +2,10 @@
 -- Pentecostal Christian Church Incorporated (PCCI)
 -- 21 Affiliated "Jesus Is Alive Worship Center" Churches across Luzon + Independent Delegate Option
 
+-- Initial Camp Event
+INSERT OR IGNORE INTO events (id, slug, name, theme, tagline, description, start_date, end_date, venue_name, venue_address, city, province, country, target_capacity, status) VALUES 
+('vlc-2027', 'vlc-2027', 'Vision & Leadership Camp 2027', 'Arise & Shine (Isaiah 60:1)', 'National Youth & Workers Leadership Gathering', 'Annual national gathering of youth delegates across PCCI for spiritual renewal.', '2027-07-21', '2027-07-24', 'PCCI National Headquarters (Buag Campus)', 'National Highway, Barangay Buag', 'Bambang', 'Nueva Vizcaya', 'Philippines', 600, 'active');
+
 -- Special Open / Independent Delegate entry for campers not belonging to a specific church
 INSERT OR REPLACE INTO churches (id, slug, name, province, city, pastor_name, contact_email, target_quota) VALUES
 ('ch_open_delegate', 'independent', 'Independent Delegate / Other Fellowship', 'Open / Various', 'Various Cities', 'Camp Coordination Team', 'info@pcci.org.ph', 100);

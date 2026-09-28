@@ -23,4 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 .wrangler
+.wrangler/*
 _worker.bundle
