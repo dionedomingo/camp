@@ -41,7 +41,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           LOWER(cmp.email) = ? 
           OR LOWER(cmp.nickname) = ? 
           OR LOWER(cmp.full_name) = ?
-        ) AND COALESCE(cmp.is_active, 1) = 1
+        ) AND COALESCE(cmp.status, 'registered') != 'cancelled'
         LIMIT 1
       `)
       .bind(identifier, identifier, identifier)
@@ -139,7 +139,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           status: latestReg ? latestReg.status : safeUser.status,
           registrations,
           ministry_interests: ministryInterests,
-          is_active: Boolean(user.is_active ?? 1),
+          is_active: user.status !== 'cancelled',
           is_admin: user.role === 'admin',
           is_staff: ['admin', 'staff', 'coordinator'].includes(user.role),
         },

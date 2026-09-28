@@ -15,7 +15,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           cmp.role, 
           cmp.church_id, 
           c.name as church_name,
-          cmp.is_active, 
+          CASE WHEN cmp.status = 'cancelled' THEN 0 ELSE 1 END as is_active, 
           cmp.created_at, 
           cmp.last_login_at
         FROM campers cmp
@@ -78,11 +78,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         INSERT INTO campers (
           id, church_id, role, full_name, nickname, gender, age, birthdate,
           email, phone, province, city, emergency_name, emergency_phone, emergency_relation,
-          password_hash, is_active, created_at
+          password_hash, status, created_at
         ) VALUES (
           ?, ?, ?, ?, ?, 'unspecified', 25, '2000-01-01',
           ?, ?, 'Nueva Vizcaya', 'Bambang', 'Camp Office', '+639170000000', 'Office',
-          ?, 1, CURRENT_TIMESTAMP
+          ?, 'registered', CURRENT_TIMESTAMP
         )
       `)
       .bind(
@@ -159,7 +159,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
               password_hash = ?,
               role = COALESCE(?, role),
               church_id = COALESCE(?, church_id),
-              is_active = ?
+              status = CASE WHEN ? = 0 THEN 'cancelled' WHEN status = 'cancelled' THEN 'registered' ELSE status END
           WHERE id = ?
         `)
         .bind(
@@ -180,7 +180,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
               email = COALESCE(?, email),
               role = COALESCE(?, role),
               church_id = COALESCE(?, church_id),
-              is_active = ?
+              status = CASE WHEN ? = 0 THEN 'cancelled' WHEN status = 'cancelled' THEN 'registered' ELSE status END
           WHERE id = ?
         `)
         .bind(
