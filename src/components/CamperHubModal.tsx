@@ -1,17 +1,17 @@
 import { useState, useEffect, type FC } from 'react';
-import { 
-  LogOut, 
-  Sparkles, 
-  Church as ChurchIcon, 
-  Phone, 
-  HeartHandshake, 
-  Calendar, 
-  Key, 
-  UserCog, 
-  Mail, 
-  Loader2, 
-  Clock, 
-  MapPin, 
+import {
+  LogOut,
+  Sparkles,
+  Church as ChurchIcon,
+  Phone,
+  HeartHandshake,
+  Calendar,
+  Key,
+  UserCog,
+  Mail,
+  Loader2,
+  Clock,
+  MapPin,
   UserCheck,
   Layers,
   PlusCircle,
@@ -28,6 +28,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import type { CamperRegistration, EventScheduleItem, EventRegistration, CampEvent } from '../types';
 import { CampPassCard } from './CampPassCard';
+import { getRegistrationStatus, formatDateReadable, formatEventDateRange } from '../lib/utils';
 import { EditProfileForm } from './EditProfileModal';
 import { apiService } from '../services/api';
 
@@ -38,6 +39,7 @@ interface CamperHubModalProps {
   onSignOut: () => void;
   onInviteFriend: () => void;
   onProfileUpdated?: (updated: CamperRegistration) => void;
+  onNavigateToSchedule?: () => void;
 }
 
 export const CamperHubModal: FC<CamperHubModalProps> = ({
@@ -47,6 +49,7 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
   onSignOut,
   onInviteFriend,
   onProfileUpdated,
+  onNavigateToSchedule,
 }) => {
   const [activeTab, setActiveTab] = useState<'pass' | 'events' | 'schedule' | 'profile' | 'details'>('pass');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -119,16 +122,16 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
 
   const activeCamperPass: CamperRegistration = activeReg
     ? {
-        ...camper,
-        event_id: activeReg.event_id,
-        activation_code: activeReg.activation_code || camper.activation_code,
-        activation_token: activeReg.activation_token || camper.activation_token,
-        role: activeReg.role || camper.role,
-        status: activeReg.status || camper.status,
-        checked_in_at: activeReg.checked_in_at || camper.checked_in_at,
-        kit_claimed: activeReg.kit_claimed ?? camper.kit_claimed,
-        active_event_name: activeReg.event_name || (activeReg.event_id === 'vlc-2029' ? 'Vision & Leadership Camp 2029' : 'Vision & Leadership Camp 2027'),
-      }
+      ...camper,
+      event_id: activeReg.event_id,
+      activation_code: activeReg.activation_code || camper.activation_code,
+      activation_token: activeReg.activation_token || camper.activation_token,
+      role: activeReg.role || camper.role,
+      status: activeReg.status || camper.status,
+      checked_in_at: activeReg.checked_in_at || camper.checked_in_at,
+      kit_claimed: activeReg.kit_claimed ?? camper.kit_claimed,
+      active_event_name: activeReg.event_name || (activeReg.event_id === 'vlc-2029' ? 'Vision & Leadership Camp 2029' : 'Vision & Leadership Camp 2027'),
+    }
     : camper;
 
   const isCheckedIn = activeCamperPass.status === 'activated' || Boolean(activeCamperPass.checked_in_at);
@@ -229,18 +232,16 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('pass')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                activeTab === 'pass' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-              }`}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${activeTab === 'pass' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
             >
               Digital Pass
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('events')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'events' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-              }`}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'events' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
             >
               <Layers className="w-3.5 h-3.5 text-[#0b57d0]" />
               <span>Camp Events</span>
@@ -254,18 +255,16 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                 setActiveTab('schedule');
                 if (schedules.length === 0) setIsLoadingSchedule(true);
               }}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                activeTab === 'schedule' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-              }`}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${activeTab === 'schedule' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
             >
               Schedule
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('profile')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                activeTab === 'profile' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-              }`}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${activeTab === 'profile' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
             >
               <UserCog className="w-3.5 h-3.5 text-[#0b57d0]" />
               <span>Edit Profile</span>
@@ -273,9 +272,8 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('details')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                activeTab === 'details' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-              }`}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${activeTab === 'details' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
             >
               Delegation
             </button>
@@ -297,11 +295,10 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                         key={reg.event_id}
                         type="button"
                         onClick={() => setSelectedEventId(reg.event_id)}
-                        className={`px-3 py-1 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                          isSelected
+                        className={`px-3 py-1 rounded-xl font-bold text-xs transition-all cursor-pointer ${isSelected
                             ? 'bg-blue-600 text-white shadow-xs'
                             : 'bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200'
-                        }`}
+                          }`}
                       >
                         {reg.event_name ? (reg.event_name.includes('2029') ? 'VLC 2029' : 'VLC 2027') : reg.event_id.toUpperCase()}
                       </button>
@@ -408,12 +405,31 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
         {activeTab === 'events' && (
           <div className="space-y-4 pt-1 text-xs">
             {joinStatusMsg && (
-              <div className={`p-3 rounded-2xl text-xs font-medium border ${
-                joinStatusMsg.type === 'success'
+              <div className={`p-3 rounded-2xl text-xs font-medium border ${joinStatusMsg.type === 'success'
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                   : 'bg-red-50 text-red-800 border-red-200'
-              }`}>
+                }`}>
                 {joinStatusMsg.text}
+              </div>
+            )}
+
+            {onNavigateToSchedule && (
+              <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center justify-between gap-2">
+                <div className="text-[11px] text-blue-900 leading-snug">
+                  <strong>Moved to Homepage:</strong> All camp assemblies and multi-day schedules are now directly available on the homepage.
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    onClose();
+                    onNavigateToSchedule();
+                  }}
+                  className="text-xs h-7 px-3 bg-white text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer shrink-0"
+                >
+                  <span>Open Full Page</span>
+                  <ArrowRight className="w-3 h-3 ml-1" />
+                </Button>
               </div>
             )}
 
@@ -444,11 +460,10 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                   return (
                     <div
                       key={reg.event_id}
-                      className={`p-4 rounded-2xl border transition-all ${
-                        isSelected
+                      className={`p-4 rounded-2xl border transition-all ${isSelected
                           ? 'border-blue-500 bg-blue-50/20 shadow-xs ring-1 ring-blue-500/20'
                           : 'border-zinc-200 bg-white hover:border-zinc-300'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -461,11 +476,10 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                                 Current Active Pass
                               </Badge>
                             )}
-                            <Badge variant="outline" className={`text-[10px] font-medium px-2 py-0.5 ${
-                              isRegCheckedIn
+                            <Badge variant="outline" className={`text-[10px] font-medium px-2 py-0.5 ${isRegCheckedIn
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}>
+                              }`}>
                               {isRegCheckedIn ? '✓ Verified & Checked In' : 'Registered Delegate'}
                             </Badge>
                           </div>
@@ -497,9 +511,8 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                             setSelectedEventId(reg.event_id);
                             setActiveTab('pass');
                           }}
-                          className={`text-xs h-7 px-3 rounded-lg cursor-pointer ${
-                            isSelected ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''
-                          }`}
+                          className={`text-xs h-7 px-3 rounded-lg cursor-pointer ${isSelected ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''
+                            }`}
                         >
                           {isSelected ? 'View Digital Pass' : 'Switch & View Pass'}
                         </Button>
@@ -520,6 +533,7 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                 <div className="space-y-3">
                   {availableEvents.map((evt) => {
                     const isJoining = isJoiningEvent === evt.id;
+                    const regInfo = getRegistrationStatus(evt);
                     return (
                       <div
                         key={evt.id}
@@ -527,9 +541,20 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <span className="inline-block text-[10px] uppercase tracking-wider font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full mb-1">
-                              Upcoming Official Gathering
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              <span className="inline-block text-[10px] uppercase tracking-wider font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                                Official Gathering
+                              </span>
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${regInfo.status === 'open'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  : regInfo.status === 'upcoming'
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                    : 'bg-rose-100 text-rose-800 border border-rose-200'
+                                }`}>
+                                <Clock className="w-2.5 h-2.5" />
+                                {regInfo.label}
+                              </span>
+                            </div>
                             <h4 className="text-base font-bold text-zinc-900">
                               {evt.name}
                             </h4>
@@ -542,8 +567,22 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                         <div className="text-[11px] text-zinc-600 space-y-1">
                           <p className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-                            <span>{evt.start_date} to {evt.end_date}</span>
+                            <span>Camp: {formatEventDateRange(evt.start_date, evt.end_date)}</span>
                           </p>
+                          {evt.registration_end_date && (
+                            <p className={`flex items-center gap-1.5 ${regInfo.status === 'open' ? 'text-emerald-700 font-medium' : regInfo.status === 'upcoming' ? 'text-amber-700 font-medium' : 'text-rose-700 font-medium'
+                              }`}>
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>
+                                {regInfo.status === 'open'
+                                  ? `Registration Allowed Until: ${formatDateReadable(evt.registration_end_date)} (${regInfo.badgeText})`
+                                  : regInfo.status === 'upcoming'
+                                    ? `Registration Opens: ${formatDateReadable(evt.registration_start_date)}`
+                                    : `Registration Cutoff Passed: ${formatDateReadable(evt.registration_end_date)}`
+                                }
+                              </span>
+                            </p>
+                          )}
                           <p className="flex items-center gap-1.5">
                             <MapPin className="w-3.5 h-3.5 text-zinc-500" />
                             <span>{evt.venue_name}, {evt.city}</span>
@@ -558,19 +597,33 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
 
                         <div className="pt-1 flex items-center justify-between flex-wrap gap-2">
                           <span className="text-[11px] text-zinc-500 italic">
-                            1-Click Signup &bull; Uses your saved profile &amp; contacts
+                            {regInfo.isAllowed
+                              ? '1-Click Signup • Uses your saved profile & contacts'
+                              : regInfo.description
+                            }
                           </span>
                           <Button
                             size="sm"
-                            disabled={isJoining}
-                            onClick={() => handleJoinEvent(evt)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl px-4 h-8 cursor-pointer"
+                            disabled={isJoining || !regInfo.isAllowed}
+                            onClick={() => {
+                              if (!regInfo.isAllowed) {
+                                alert(regInfo.description);
+                                return;
+                              }
+                              handleJoinEvent(evt);
+                            }}
+                            className={`font-semibold text-xs rounded-xl px-4 h-8 ${regInfo.isAllowed
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                                : 'bg-zinc-200 text-zinc-500 cursor-not-allowed border border-zinc-300'
+                              }`}
                           >
                             {isJoining ? (
                               <>
                                 <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
                                 <span>Joining...</span>
                               </>
+                            ) : !regInfo.isAllowed ? (
+                              <span>{regInfo.badgeText}</span>
                             ) : (
                               <>
                                 <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
@@ -674,6 +727,26 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
         {/* Tab 3: Schedule */}
         {activeTab === 'schedule' && (
           <div className="space-y-3 pt-2 text-xs">
+            {onNavigateToSchedule && (
+              <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center justify-between gap-2">
+                <div className="text-[11px] text-blue-900 leading-snug">
+                  <strong>Moved to Homepage:</strong> The full Official Schedule is now available directly on the homepage.
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    onClose();
+                    onNavigateToSchedule();
+                  }}
+                  className="text-xs h-7 px-3 bg-white text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer shrink-0"
+                >
+                  <span>Open Full Page</span>
+                  <ArrowRight className="w-3 h-3 ml-1" />
+                </Button>
+              </div>
+            )}
+
             <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-200 font-semibold text-zinc-800">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#0b57d0]" />
@@ -694,11 +767,10 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                     key={dayNum}
                     type="button"
                     onClick={() => setSelectedDay(dayNum)}
-                    className={`px-3 py-1.5 rounded-xl font-medium text-xs transition-colors shrink-0 ${
-                      isSelected
+                    className={`px-3 py-1.5 rounded-xl font-medium text-xs transition-colors shrink-0 ${isSelected
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200/70'
-                    }`}
+                      }`}
                   >
                     Day {dayNum} <span className={isSelected ? 'text-blue-100 font-normal' : 'text-zinc-400 font-normal'}>({dayDates[dayNum - 1]})</span>
                   </button>
@@ -716,14 +788,14 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                       item.session_type === 'rally'
                         ? 'bg-amber-100 text-amber-800 border-amber-200'
                         : item.session_type === 'plenary'
-                        ? 'bg-blue-100 text-blue-800 border-blue-200'
-                        : item.session_type === 'workshop'
-                        ? 'bg-purple-100 text-purple-800 border-purple-200'
-                        : item.session_type === 'meal'
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                        : item.session_type === 'sports'
-                        ? 'bg-orange-100 text-orange-800 border-orange-200'
-                        : 'bg-zinc-100 text-zinc-700 border-zinc-200';
+                          ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : item.session_type === 'workshop'
+                            ? 'bg-purple-100 text-purple-800 border-purple-200'
+                            : item.session_type === 'meal'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                              : item.session_type === 'sports'
+                                ? 'bg-orange-100 text-orange-800 border-orange-200'
+                                : 'bg-zinc-100 text-zinc-700 border-zinc-200';
 
                     return (
                       <div

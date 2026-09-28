@@ -1,6 +1,17 @@
 import type { FC } from 'react';
-import { User, ShieldCheck, Sparkles, CheckCircle2, Menu, Building2 } from 'lucide-react';
+import {
+  User,
+  ShieldCheck,
+  Sparkles,
+  CheckCircle2,
+  Menu,
+  Building2,
+  Calendar,
+  Flame
+} from 'lucide-react';
 import type { AdminUser, CamperRegistration } from '../types';
+
+export type AppTab = 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile';
 
 interface HeaderProps {
   onLogoClick: () => void;
@@ -11,8 +22,10 @@ interface HeaderProps {
   onCamperClick?: () => void;
   onActivateClick?: () => void;
   onOpenAdminDrawer?: () => void;
+  onNavigateToSchedule?: () => void;
+  onNavigateToOverview?: () => void;
   onNavigateToChurches?: () => void;
-  activeTab: 'dashboard' | 'churches' | 'admin';
+  activeTab: AppTab;
 }
 
 export const Header: FC<HeaderProps> = ({
@@ -24,13 +37,15 @@ export const Header: FC<HeaderProps> = ({
   onCamperClick,
   onActivateClick,
   onOpenAdminDrawer,
+  onNavigateToSchedule,
+  onNavigateToOverview,
   onNavigateToChurches,
   activeTab,
 }) => {
   const avatarSelfie = currentUser?.selfie_url || currentCamper?.selfie_url;
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-zinc-200/80">
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-zinc-200/80">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Left: Admin Drawer Toggle (Admin Only) + Logo + Navigation */}
         <div className="flex items-center gap-2 sm:gap-4">
@@ -50,7 +65,8 @@ export const Header: FC<HeaderProps> = ({
             className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none"
           >
             <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base shadow-xs group-hover:bg-blue-100 transition-colors">
-              ✝
+              <img src="https://pcci-53421.wasmer.app/images/pcci-wordmark.png" />
+
             </div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-base tracking-tight text-zinc-900">
@@ -62,20 +78,47 @@ export const Header: FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Navigation Link to Church Delegations */}
-          {onNavigateToChurches && (
-            <button
-              onClick={onNavigateToChurches}
-              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-                activeTab === 'churches'
-                  ? 'bg-blue-50 text-blue-700 font-semibold'
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 ml-2">
+            {onNavigateToSchedule && (
+              <button
+                onClick={onNavigateToSchedule}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${activeTab === 'schedule'
+                  ? 'bg-blue-50 text-blue-700 font-semibold shadow-2xs'
                   : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Church Delegations</span>
-            </button>
-          )}
+                  }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <span>Official Schedule</span>
+              </button>
+            )}
+
+            {onNavigateToOverview && (
+              <button
+                onClick={onNavigateToOverview}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${activeTab === 'dashboard'
+                  ? 'bg-blue-50 text-blue-700 font-semibold shadow-2xs'
+                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                  }`}
+              >
+                <Flame className="w-3.5 h-3.5 text-yellow-500" />
+                <span>Camp Overview</span>
+              </button>
+            )}
+
+            {onNavigateToChurches && (
+              <button
+                onClick={onNavigateToChurches}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${activeTab === 'churches'
+                  ? 'bg-blue-50 text-blue-700 font-semibold shadow-2xs'
+                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                  }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Church Delegations</span>
+              </button>
+            )}
+          </nav>
         </div>
 
         {/* Right Action Controls */}
@@ -98,8 +141,8 @@ export const Header: FC<HeaderProps> = ({
               title={`Admin Portal (${currentUser?.name || 'Alexius'})`}
               aria-label="Admin Portal"
               className={`flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full transition-all cursor-pointer shadow-xs ${activeTab === 'admin'
-                  ? 'bg-zinc-900 text-white'
-                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200'
+                ? 'bg-zinc-900 text-white'
+                : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200'
                 }`}
             >
               <div className="relative flex items-center justify-center">
@@ -165,6 +208,48 @@ export const Header: FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* Mobile Sub-Navigation Bar for Non-Admin Views */}
+      {!isAdminAuthenticated && (
+        <div className="md:hidden flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-50 border-t border-zinc-200/60 overflow-x-auto scrollbar-none">
+          {onNavigateToSchedule && (
+            <button
+              onClick={onNavigateToSchedule}
+              className={`tap-pill px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1.5 ${activeTab === 'schedule'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100'
+                }`}
+            >
+              <Calendar className="w-3 h-3" />
+              <span>Schedule</span>
+            </button>
+          )}
+          {onNavigateToOverview && (
+            <button
+              onClick={onNavigateToOverview}
+              className={`tap-pill px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1.5 ${activeTab === 'dashboard'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100'
+                }`}
+            >
+              <Flame className="w-3 h-3 text-yellow-500" />
+              <span>Overview</span>
+            </button>
+          )}
+          {onNavigateToChurches && (
+            <button
+              onClick={onNavigateToChurches}
+              className={`tap-pill px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1.5 ${activeTab === 'churches'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100'
+                }`}
+            >
+              <Building2 className="w-3 h-3" />
+              <span>Delegations</span>
+            </button>
+          )}
+        </div>
+      )}
     </header>
   );
 };

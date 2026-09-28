@@ -1,22 +1,24 @@
 import { useEffect, type FC } from 'react';
-import { 
-  QrCode, 
-  Users, 
-  Building2, 
-  LayoutDashboard, 
-  BookOpen, 
+import {
+  QrCode,
+  Users,
+  Building2,
+  LayoutDashboard,
+  BookOpen,
   Calendar,
-  X, 
-  ExternalLink, 
-  LogOut, 
+  X,
+  ExternalLink,
+  LogOut,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  HardDrive,
+  Printer
 } from 'lucide-react';
 import type { AdminUser } from '../types';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 
-export type AdminTab = 'arrival' | 'users' | 'churches' | 'events' | 'overview' | 'campers';
+export type AdminTab = 'arrival' | 'print_queue' | 'users' | 'churches' | 'events' | 'media' | 'overview' | 'campers';
 
 interface AdminLeftDrawerProps {
   isOpen: boolean;
@@ -77,47 +79,63 @@ export const AdminLeftDrawer: FC<AdminLeftDrawerProps> = ({
     badgeColor?: string;
     badgeText?: string;
   }> = [
-    {
-      id: 'arrival',
-      label: 'Arrival Desk',
-      description: 'Check-in scanner & kit distribution',
-      icon: QrCode,
-      badgeText: 'Live Desk',
-      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    },
-    {
-      id: 'users',
-      label: 'User Management',
-      description: 'Manage roles & promote delegates',
-      icon: Users,
-    },
-    {
-      id: 'churches',
-      label: 'Churches & Delegations',
-      description: 'Quotas, cities & synced centers',
-      icon: Building2,
-    },
-    {
-      id: 'events',
-      label: 'Camp Event & Schedule',
-      description: 'Entity metadata & session builder',
-      icon: Calendar,
-      badgeText: 'Dynamic',
-      badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
-    },
-    {
-      id: 'overview',
-      label: 'Camp Overview',
-      description: 'Live statistics & recent signups',
-      icon: LayoutDashboard,
-    },
-    {
-      id: 'campers',
-      label: 'Registered Campers',
-      description: 'Delegate roster & scripture verses',
-      icon: BookOpen,
-    },
-  ];
+      {
+        id: 'arrival',
+        label: 'Arrival Desk',
+        description: 'Check-in scanner & kit distribution',
+        icon: QrCode,
+        badgeText: 'Live Desk',
+        badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      },
+      {
+        id: 'print_queue',
+        label: 'ID Printing Queue',
+        description: 'Batch badge printer & reprint tracking',
+        icon: Printer,
+        badgeText: 'Badges',
+        badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      },
+      {
+        id: 'users',
+        label: 'User Management',
+        description: 'Manage roles & promote delegates',
+        icon: Users,
+      },
+      {
+        id: 'churches',
+        label: 'Churches & Delegations',
+        description: 'Quotas, cities & synced centers',
+        icon: Building2,
+      },
+      {
+        id: 'events',
+        label: 'Camp Event & Schedule',
+        description: 'Entity metadata & session builder',
+        icon: Calendar,
+        badgeText: 'Dynamic',
+        badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
+      },
+      {
+        id: 'media',
+        label: 'Media Vault (R2)',
+        description: 'Cloudflare R2 images & video library',
+        icon: HardDrive,
+        badgeText: 'R2 Cloud',
+        badgeColor: 'bg-orange-50 text-orange-700 border-orange-200',
+      },
+      {
+        id: 'overview',
+        label: 'Camp Overview',
+        description: 'Live statistics & recent signups',
+        icon: LayoutDashboard,
+      },
+      {
+        id: 'campers',
+        label: 'Registered Campers',
+        description: 'Delegate roster & scripture verses',
+        icon: BookOpen,
+      },
+    ];
 
   const handleItemClick = (tabId: AdminTab) => {
     onSelectTab(tabId);
@@ -127,7 +145,7 @@ export const AdminLeftDrawer: FC<AdminLeftDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex animate-fadeIn">
       {/* Backdrop */}
-      <div 
+      <div
         onClick={onClose}
         className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity cursor-pointer"
         aria-hidden="true"
@@ -139,7 +157,7 @@ export const AdminLeftDrawer: FC<AdminLeftDrawerProps> = ({
         <div className="p-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/50">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-              ✝
+              <img src="https://pcci-53421.wasmer.app/images/pcci-wordmark.png" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -198,18 +216,16 @@ export const AdminLeftDrawer: FC<AdminLeftDrawerProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleItemClick(item.id)}
-                className={`w-full text-left p-3 rounded-xl transition-all cursor-pointer flex items-center justify-between group ${
-                  isActive
+                className={`w-full text-left p-3 rounded-xl transition-all cursor-pointer flex items-center justify-between group ${isActive
                     ? 'bg-zinc-900 text-white shadow-xs'
                     : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`p-2 rounded-lg shrink-0 ${
-                    isActive 
-                      ? 'bg-zinc-800 text-white' 
+                  <div className={`p-2 rounded-lg shrink-0 ${isActive
+                      ? 'bg-zinc-800 text-white'
                       : 'bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200 group-hover:text-zinc-900'
-                  }`}>
+                    }`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -218,26 +234,23 @@ export const AdminLeftDrawer: FC<AdminLeftDrawerProps> = ({
                         {item.label}
                       </span>
                       {item.badgeText && (
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
-                          isActive
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${isActive
                             ? 'bg-zinc-800 text-emerald-400 border-zinc-700'
                             : item.badgeColor || 'bg-zinc-100 text-zinc-600'
-                        }`}>
+                          }`}>
                           {item.badgeText}
                         </span>
                       )}
                     </div>
-                    <p className={`text-[11px] truncate mt-0.5 ${
-                      isActive ? 'text-zinc-400' : 'text-zinc-500'
-                    }`}>
+                    <p className={`text-[11px] truncate mt-0.5 ${isActive ? 'text-zinc-400' : 'text-zinc-500'
+                      }`}>
                       {item.description}
                     </p>
                   </div>
                 </div>
 
-                <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${
-                  isActive ? 'text-zinc-400 translate-x-0.5' : 'text-zinc-300 group-hover:text-zinc-500'
-                }`} />
+                <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isActive ? 'text-zinc-400 translate-x-0.5' : 'text-zinc-300 group-hover:text-zinc-500'
+                  }`} />
               </button>
             );
           })}

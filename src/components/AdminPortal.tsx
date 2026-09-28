@@ -14,6 +14,8 @@ import { AdminChurchManager } from './AdminChurchManager';
 import { AdminUserManagement } from './AdminUserManagement';
 import { AdminArrivalDesk } from './AdminArrivalDesk';
 import { AdminEventManager } from './AdminEventManager';
+import { AdminMediaManager } from './AdminMediaManager';
+import { AdminIdPrintQueue } from './AdminIdPrintQueue';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
@@ -49,9 +51,11 @@ export const AdminPortal: FC<AdminPortalProps> = ({
 
   const tabLabels: Record<AdminTab, string> = {
     arrival: 'Arrival Desk',
+    print_queue: 'ID Printing Queue',
     users: 'User Management',
     churches: 'Churches & Delegations',
     events: 'Camp Event & Schedule',
+    media: 'Media Vault (Cloudflare R2)',
     overview: 'Camp Overview',
     campers: 'Registered Campers',
   };
@@ -163,6 +167,11 @@ export const AdminPortal: FC<AdminPortalProps> = ({
         <AdminArrivalDesk churches={churches} />
       )}
 
+      {/* ID Badge Printing Queue Tab */}
+      {activeAdminTab === 'print_queue' && (
+        <AdminIdPrintQueue churches={churches} currentUser={currentUser} />
+      )}
+
       {/* 1. User Management Tab */}
       {activeAdminTab === 'users' && (
         <AdminUserManagement currentUser={currentUser} churches={churches} />
@@ -179,6 +188,11 @@ export const AdminPortal: FC<AdminPortalProps> = ({
       {/* 3. Camp Event Entity & Dynamic Schedule Builder */}
       {activeAdminTab === 'events' && (
         <AdminEventManager />
+      )}
+
+      {/* 4. Cloudflare R2 Media & Assets Vault */}
+      {activeAdminTab === 'media' && (
+        <AdminMediaManager />
       )}
 
       {/* 4. Camp Overview Tab */}

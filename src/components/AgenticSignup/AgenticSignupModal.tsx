@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import {
   X,
   Sparkles,
@@ -6,18 +6,21 @@ import {
   ArrowRight,
   ArrowLeft,
   Search,
-  HeartHandshake
+  HeartHandshake,
+  Clock,
 } from 'lucide-react';
-import type { CamperRegistration, CamperRole, Church } from '../../types';
+import type { CamperRegistration, CamperRole, Church, CampEvent } from '../../types';
 import { SelfieCapture } from '../SelfieCapture';
 import { CampPassCard } from '../CampPassCard';
 import { apiService } from '../../services/api';
+import { getRegistrationStatus, formatDateReadable, formatEventDateRange } from '../../lib/utils';
 
 interface AgenticSignupModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialChurch: Church | null;
   allChurches: Church[];
+  activeEvent?: CampEvent | null;
   onComplete: (camper: CamperRegistration) => void;
   onOpenInviteModal: (camper: CamperRegistration) => void;
 }
@@ -48,9 +51,28 @@ export const AgenticSignupModal: FC<AgenticSignupModalProps> = ({
   onClose,
   initialChurch,
   allChurches,
+  activeEvent: propEvent,
   onComplete,
   onOpenInviteModal,
 }) => {
+  const [fetchedEvent, setFetchedEvent] = useState<CampEvent | null>(null);
+  const event = propEvent || fetchedEvent;
+
+  useEffect(() => {
+    if (propEvent) return;
+    let isMounted = true;
+    apiService.getEvents('vlc-2027').then((res) => {
+      if (isMounted && res.active_event) {
+        setFetchedEvent(res.active_event);
+      }
+    }).catch(console.error);
+    return () => {
+      isMounted = false;
+    };
+  }, [propEvent]);
+
+  const regInfo = getRegistrationStatus(event);
+
   // Steps: 0: Church (if not pre-selected), 1: Role, 2: Basics & Care, 3: Photo, 4: Ministry & Verse, 5: Complete
   const [currentStep, setCurrentStep] = useState<number>(initialChurch ? 1 : 0);
   const [churchSearch, setChurchSearch] = useState<string>('');
@@ -176,7 +198,8 @@ export const AgenticSignupModal: FC<AgenticSignupModalProps> = ({
         <div className="flex items-center justify-between border-b border-[#f1f3f4] pb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-[#e8f0fe] text-[#0b57d0] flex items-center justify-center font-bold text-sm">
-              ✝
+              <img src="https://pcci-53421.wasmer.app/images/pcci-wordmark.png" />
+
             </div>
             <div>
               <span className="text-xs font-bold text-[#1f1f1f]">VLC 2027 Registration</span>
@@ -192,8 +215,59 @@ export const AgenticSignupModal: FC<AgenticSignupModalProps> = ({
           </button>
         </div>
 
-        {/* COMPLETED STEP: Show Camp Pass & Invite CTA */}
-        {currentStep === 5 && completedCamper ? (
+        {/* REGISTRATION CLOSED OR NOT YET OPEN NOTICE */}
+        {!regInfo.isAllowed && currentStep !== 5 ? (
+          <div className="space-y-6 text-center py-4 animate-fadeIn">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto text-2xl ${regInfo.status === 'upcoming' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+              }`}>
+              <Clock className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-zinc-900">
+                {regInfo.status === 'upcoming' ? 'Registration Not Yet Open' : 'Registration Closed'}
+              </h2>
+              <p className="text-xs text-zinc-600 max-w-md mx-auto leading-relaxed">
+                {regInfo.description}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 text-left text-xs space-y-2.5 max-w-md mx-auto">
+              <div className="flex items-center justify-between text-zinc-700">
+                <span className="font-semibold text-zinc-500">Camp Gathering:</span>
+                <span className="font-bold text-zinc-900">{event?.name || 'Vision & Leadership Camp 2027'}</span>
+              </div>
+              <div className="flex items-center justify-between text-zinc-700">
+                <span className="font-semibold text-zinc-500">Camp Dates:</span>
+                <span className="font-medium text-zinc-800">{formatEventDateRange(event?.start_date, event?.end_date)}</span>
+              </div>
+              {event?.registration_start_date && (
+                <div className="flex items-center justify-between text-zinc-700">
+                  <span className="font-semibold text-zinc-500">Registration Opened:</span>
+                  <span className="font-medium text-zinc-800">{formatDateReadable(event.registration_start_date)}</span>
+                </div>
+              )}
+              {event?.registration_end_date && (
+                <div className="flex items-center justify-between text-zinc-700">
+                  <span className="font-semibold text-zinc-500">Registration Cutoff:</span>
+                  <span className={`font-semibold ${regInfo.status === 'closed' ? 'text-rose-600' : 'text-zinc-800'}`}>
+                    {formatDateReadable(event.registration_end_date)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="tap-pill px-6 py-2.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold shadow-sm cursor-pointer"
+              >
+                Close &amp; Return to Home
+              </button>
+            </div>
+          </div>
+        ) : currentStep === 5 && completedCamper ? (
           <div className="space-y-5 text-center animate-fadeIn">
             <div className="w-12 h-12 rounded-full bg-[#e6f4ea] text-[#188038] flex items-center justify-center mx-auto text-xl font-bold">
               ✓
@@ -281,6 +355,11 @@ export const AgenticSignupModal: FC<AgenticSignupModalProps> = ({
                     })
                     .map((church) => {
                       const isSelected = formData.church_id === church.id;
+                      const isFull = Boolean(
+                        church.target_quota &&
+                        church.target_quota > 0 &&
+                        ((church.registered_count || 0) >= church.target_quota)
+                      );
                       return (
                         <button
                           type="button"
@@ -297,11 +376,18 @@ export const AgenticSignupModal: FC<AgenticSignupModalProps> = ({
                             setCurrentStep(1);
                           }}
                           className={`text-left p-3 rounded-2xl border transition-all cursor-pointer ${isSelected
-                              ? 'bg-[#e8f0fe] border-[#0b57d0] text-[#0b57d0] shadow-xs ring-1 ring-[#0b57d0]'
-                              : 'bg-white border-zinc-200 hover:border-[#0b57d0] hover:bg-[#f8fafd]'
+                            ? 'bg-[#e8f0fe] border-[#0b57d0] text-[#0b57d0] shadow-xs ring-1 ring-[#0b57d0]'
+                            : 'bg-white border-zinc-200 hover:border-[#0b57d0] hover:bg-[#f8fafd]'
                             }`}
                         >
-                          <div className="font-semibold text-xs text-zinc-900 line-clamp-1">{church.name}</div>
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="font-semibold text-xs text-zinc-900 line-clamp-1">{church.name}</div>
+                            {isFull && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">
+                                Waitlist
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[11px] text-zinc-500">{church.city}, {church.province}</div>
                         </button>
                       );
@@ -338,6 +424,15 @@ export const AgenticSignupModal: FC<AgenticSignupModalProps> = ({
                     </span>
                   </button>
                 </div>
+
+                {formData.church_id && allChurches.some(c => c.id === formData.church_id && c.target_quota && c.target_quota > 0 && ((c.registered_count || 0) >= c.target_quota)) && (
+                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                    <span>
+                      <strong>{formData.church_name}</strong> has reached its target quota. Your registration will be placed on the delegation priority waitlist, or you may choose Independent Delegate.
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 

@@ -66,11 +66,32 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .bind(camperId)
       .all();
 
+    const today = new Date().toISOString().split('T')[0];
+    const normalizedAvailableEvents = (availableEvents || []).map((e: any) => {
+      let regStatus: 'open' | 'upcoming' | 'closed' = 'open';
+      let isAllowed = true;
+      if (e.status === 'completed' || e.status === 'archived') {
+        regStatus = 'closed';
+        isAllowed = false;
+      } else if (e.registration_start_date && today < e.registration_start_date) {
+        regStatus = 'upcoming';
+        isAllowed = false;
+      } else if (e.registration_end_date && today > e.registration_end_date) {
+        regStatus = 'closed';
+        isAllowed = false;
+      }
+      return {
+        ...e,
+        registration_status: regStatus,
+        is_registration_allowed: isAllowed,
+      };
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
         registrations,
-        available_events: availableEvents,
+        available_events: normalizedAvailableEvents,
       }),
       {
         status: 200,
@@ -127,6 +148,36 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return new Response(
         JSON.stringify({ error: 'Event not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify registration allowed dates leading up to the actual event
+    const today = new Date().toISOString().split('T')[0];
+
+    if (event.status === 'completed' || event.status === 'archived') {
+      return new Response(
+        JSON.stringify({ error: `Registration for ${event.name} is closed as the event has concluded.` }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (event.registration_start_date && today < event.registration_start_date) {
+      return new Response(
+        JSON.stringify({
+          error: `Registration for ${event.name} has not opened yet. Registration opens on ${event.registration_start_date} leading up to the event.`,
+          registration_status: 'upcoming',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (event.registration_end_date && today > event.registration_end_date) {
+      return new Response(
+        JSON.stringify({
+          error: `Registration for ${event.name} is closed. The registration cutoff deadline was ${event.registration_end_date} leading up to the event.`,
+          registration_status: 'closed',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 

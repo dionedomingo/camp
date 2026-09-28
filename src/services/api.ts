@@ -1,4 +1,4 @@
-import type { CamperRegistration, CamperRole, Church, RegistrationStats, AdminUser, CheckInStats, CampEvent, EventScheduleItem, EventRegistration } from '../types';
+import type { CamperRegistration, CamperRole, Church, RegistrationStats, AdminUser, CheckInStats, CampEvent, EventScheduleItem, EventRegistration, MediaItem, BadgeQueueResponse, QueueDelegate } from '../types';
 
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
@@ -38,6 +38,390 @@ export const INITIAL_PCCI_CHURCHES: Church[] = [
   { id: 'ch_jia_mauan', slug: 'jia-mauan-bambang', name: 'Jesus Is Alive - Mauan', province: 'Nueva Vizcaya', city: 'Bambang', pastor_name: 'Pastor in Charge', contact_email: 'mauan@pcci.org.ph', target_quota: 30, registered_count: 9 },
   { id: 'ch_jia_san_antonio', slug: 'jia-san-antonio-bambang', name: 'Jesus Is Alive - San Antonio North', province: 'Nueva Vizcaya', city: 'Bambang', pastor_name: 'Pastor in Charge', contact_email: 'sanantonio@pcci.org.ph', target_quota: 35, registered_count: 17 },
   { id: 'ch_jia_mangayang', slug: 'jia-mangayang-dupax', name: 'Jesus Is Alive - Mangayang', province: 'Nueva Vizcaya', city: 'Dupax Del Norte', pastor_name: 'Pastor in Charge', contact_email: 'mangayang@pcci.org.ph', target_quota: 35, registered_count: 12 },
+];
+
+export const INITIAL_CAMP_EVENTS: CampEvent[] = [
+  {
+    id: 'vlc-2027',
+    slug: 'vlc-2027',
+    name: 'Vision & Leadership Camp 2027',
+    theme: 'Arise & Shine (Isaiah 60:1)',
+    tagline: 'National Youth & Workers Leadership Gathering',
+    description: 'Annual national gathering of youth delegates, church workers, worship ministers, and pastors across Pentecostal Churches of Christ, Inc. (PCCI) for spiritual renewal and kingdom empowerment.',
+    start_date: '2027-07-21',
+    end_date: '2027-07-24',
+    venue_name: 'PCCI National Headquarters (Buag Campus)',
+    venue_address: 'National Highway, Barangay Buag',
+    city: 'Bambang',
+    province: 'Nueva Vizcaya',
+    country: 'Philippines',
+    target_capacity: 600,
+    status: 'active',
+    registration_status: 'open',
+    is_registration_allowed: true,
+  },
+  {
+    id: 'vlc-2029',
+    slug: 'vlc-2029',
+    name: 'Vision & Leadership Camp 2029',
+    theme: 'Greater Glory (Haggai 2:9)',
+    tagline: 'Biennial National Youth & Workers Leadership Gathering',
+    description: 'The next milestone national gathering of youth delegates, church workers, worship ministers, and pastors across Pentecostal Churches of Christ, Inc. (PCCI).',
+    start_date: '2029-07-25',
+    end_date: '2029-07-28',
+    venue_name: 'PCCI National Headquarters (Buag Campus)',
+    venue_address: 'National Highway, Barangay Buag',
+    city: 'Bambang',
+    province: 'Nueva Vizcaya',
+    country: 'Philippines',
+    target_capacity: 750,
+    status: 'upcoming',
+    registration_status: 'open',
+    is_registration_allowed: true,
+  },
+];
+
+export const INITIAL_EVENT_SCHEDULES: EventScheduleItem[] = [
+  // Day 1
+  {
+    id: 'sch_d1_01',
+    event_id: 'vlc-2027',
+    day_number: 1,
+    day_title: 'Day 1 • Arrival & Opening Rally',
+    date: '2027-07-21',
+    time_start: '12:00',
+    time_end: '16:00',
+    time_display: '12:00 PM – 4:00 PM',
+    title: 'Arrival Desk & Badge Verification',
+    description: 'Gate arrival, barcode scanning, official kit & lanyard distribution, and dorm check-in.',
+    location: 'Main Secretariat Gate',
+    speaker: 'Arrival Desk Team',
+    session_type: 'general',
+    sort_order: 1,
+  },
+  {
+    id: 'sch_d1_02',
+    event_id: 'vlc-2027',
+    day_number: 1,
+    day_title: 'Day 1 • Arrival & Opening Rally',
+    date: '2027-07-21',
+    time_start: '16:00',
+    time_end: '17:30',
+    time_display: '4:00 PM – 5:30 PM',
+    title: 'Delegation Orientation & Cabin Fellowship',
+    description: 'Meet your cabin leader, review camp house rules, and settle into dorm assignments.',
+    location: 'Dormitory Pavilions',
+    speaker: 'Camp Counselors',
+    session_type: 'fellowship',
+    sort_order: 2,
+  },
+  {
+    id: 'sch_d1_03',
+    event_id: 'vlc-2027',
+    day_number: 1,
+    day_title: 'Day 1 • Arrival & Opening Rally',
+    date: '2027-07-21',
+    time_start: '17:30',
+    time_end: '18:45',
+    time_display: '5:30 PM – 6:45 PM',
+    title: 'Welcome Fellowship Dinner',
+    description: 'Community meal with all participating PCCI church delegations.',
+    location: 'Dining Hall',
+    speaker: 'Kitchen Committee',
+    session_type: 'meal',
+    sort_order: 3,
+  },
+  {
+    id: 'sch_d1_04',
+    event_id: 'vlc-2027',
+    day_number: 1,
+    day_title: 'Day 1 • Arrival & Opening Rally',
+    date: '2027-07-21',
+    time_start: '19:00',
+    time_end: '21:30',
+    time_display: '7:00 PM – 9:30 PM',
+    title: 'Opening Night Rally: "Arise & Shine"',
+    description: 'Keynote assembly on Isaiah 60:1, high-energy worship, and banner presentation.',
+    location: 'Main Sanctuary & Auditorium',
+    speaker: 'Bishop & Keynote Speakers',
+    session_type: 'rally',
+    sort_order: 4,
+  },
+  // Day 2
+  {
+    id: 'sch_d2_01',
+    event_id: 'vlc-2027',
+    day_number: 2,
+    day_title: 'Day 2 • Leadership Tracks & Holy Fire',
+    date: '2027-07-22',
+    time_start: '06:30',
+    time_end: '07:30',
+    time_display: '6:30 AM – 7:30 AM',
+    title: 'Morning Devotion & Prayer Walk',
+    description: 'Quiet time with scripture and sunrise intercession for the nation.',
+    location: 'Camp Prayer Grounds',
+    speaker: 'Pastoral Elders',
+    session_type: 'fellowship',
+    sort_order: 1,
+  },
+  {
+    id: 'sch_d2_02',
+    event_id: 'vlc-2027',
+    day_number: 2,
+    day_title: 'Day 2 • Leadership Tracks & Holy Fire',
+    date: '2027-07-22',
+    time_start: '07:30',
+    time_end: '08:30',
+    time_display: '7:30 AM – 8:30 AM',
+    title: 'Camp Breakfast',
+    description: 'Nutritious breakfast to fuel the day of training and rallies.',
+    location: 'Dining Hall',
+    speaker: 'Kitchen Committee',
+    session_type: 'meal',
+    sort_order: 2,
+  },
+  {
+    id: 'sch_d2_03',
+    event_id: 'vlc-2027',
+    day_number: 2,
+    day_title: 'Day 2 • Leadership Tracks & Holy Fire',
+    date: '2027-07-22',
+    time_start: '09:00',
+    time_end: '11:30',
+    time_display: '9:00 AM – 11:30 AM',
+    title: 'Plenary 1: Kingdom Leadership in a Changing World',
+    description: 'Building resilient Christian character, integrity, and biblical leadership acumen.',
+    location: 'Main Sanctuary',
+    speaker: 'Guest Speaker',
+    session_type: 'plenary',
+    sort_order: 3,
+  },
+  {
+    id: 'sch_d2_04',
+    event_id: 'vlc-2027',
+    day_number: 2,
+    day_title: 'Day 2 • Leadership Tracks & Holy Fire',
+    date: '2027-07-22',
+    time_start: '11:45',
+    time_end: '13:15',
+    time_display: '11:45 AM – 1:15 PM',
+    title: 'Fellowship Lunch & Delegation Discussions',
+    description: 'Group meal and reflection on plenary insights.',
+    location: 'Dining Hall',
+    speaker: 'Delegation Leaders',
+    session_type: 'meal',
+    sort_order: 4,
+  },
+  {
+    id: 'sch_d2_05',
+    event_id: 'vlc-2027',
+    day_number: 2,
+    day_title: 'Day 2 • Leadership Tracks & Holy Fire',
+    date: '2027-07-22',
+    time_start: '13:30',
+    time_end: '16:00',
+    time_display: '1:30 PM – 4:00 PM',
+    title: 'Specialized Ministry Workshop Tracks',
+    description: 'Concurrent breakout sessions: Praise & Worship, Media/Tech, Youth Ministry, Children Church.',
+    location: 'Workshops Rooms A, B, C & D',
+    speaker: 'Ministry Department Heads',
+    session_type: 'workshop',
+    sort_order: 5,
+  },
+  {
+    id: 'sch_d2_06',
+    event_id: 'vlc-2027',
+    day_number: 2,
+    day_title: 'Day 2 • Leadership Tracks & Holy Fire',
+    date: '2027-07-22',
+    time_start: '16:15',
+    time_end: '17:45',
+    time_display: '4:15 PM – 5:45 PM',
+    title: 'Camp Team Challenges & Active Games',
+    description: 'Fun, high-energy delegation team building challenges.',
+    location: 'Camp Sports Field',
+    speaker: 'Activities Committee',
+    session_type: 'sports',
+    sort_order: 6,
+  },
+  {
+    id: 'sch_d2_07',
+    event_id: 'vlc-2027',
+    day_number: 2,
+    day_title: 'Day 2 • Leadership Tracks & Holy Fire',
+    date: '2027-07-22',
+    time_start: '19:00',
+    time_end: '22:00',
+    time_display: '7:00 PM – 10:00 PM',
+    title: 'Night of Praise, Worship & Altar Encounter',
+    description: 'Extended worship, baptism of the Holy Spirit, and personal ministry prayer lines.',
+    location: 'Main Sanctuary',
+    speaker: 'VLC Worship Team',
+    session_type: 'rally',
+    sort_order: 7,
+  },
+  // Day 3
+  {
+    id: 'sch_d3_01',
+    event_id: 'vlc-2027',
+    day_number: 3,
+    day_title: 'Day 3 • Empowerment & Fellowship Night',
+    date: '2027-07-23',
+    time_start: '06:30',
+    time_end: '07:30',
+    time_display: '6:30 AM – 7:30 AM',
+    title: 'Dawn Watch Prayer & Worship',
+    description: 'Corporate prayer for local churches and communities.',
+    location: 'Prayer Pavilions',
+    speaker: 'Youth Leaders',
+    session_type: 'fellowship',
+    sort_order: 1,
+  },
+  {
+    id: 'sch_d3_02',
+    event_id: 'vlc-2027',
+    day_number: 3,
+    day_title: 'Day 3 • Empowerment & Fellowship Night',
+    date: '2027-07-23',
+    time_start: '07:30',
+    time_end: '08:30',
+    time_display: '7:30 AM – 8:30 AM',
+    title: 'Breakfast',
+    description: 'Morning fellowship breakfast.',
+    location: 'Dining Hall',
+    speaker: 'Kitchen Committee',
+    session_type: 'meal',
+    sort_order: 2,
+  },
+  {
+    id: 'sch_d3_03',
+    event_id: 'vlc-2027',
+    day_number: 3,
+    day_title: 'Day 3 • Empowerment & Fellowship Night',
+    date: '2027-07-23',
+    time_start: '09:00',
+    time_end: '11:30',
+    time_display: '9:00 AM – 11:30 AM',
+    title: 'Plenary 2: The Empowered Generation',
+    description: 'Evangelism, campus ministry strategy, and community impact.',
+    location: 'Main Sanctuary',
+    speaker: 'National Youth Director',
+    session_type: 'plenary',
+    sort_order: 3,
+  },
+  {
+    id: 'sch_d3_04',
+    event_id: 'vlc-2027',
+    day_number: 3,
+    day_title: 'Day 3 • Empowerment & Fellowship Night',
+    date: '2027-07-23',
+    time_start: '11:45',
+    time_end: '13:15',
+    time_display: '11:45 AM – 1:15 PM',
+    title: 'Lunch & Regional Delegation Meeting',
+    description: 'Provincial delegation coordination and regional fellowship.',
+    location: 'Dining Hall',
+    speaker: 'Pastors & Coordinators',
+    session_type: 'meal',
+    sort_order: 4,
+  },
+  {
+    id: 'sch_d3_05',
+    event_id: 'vlc-2027',
+    day_number: 3,
+    day_title: 'Day 3 • Empowerment & Fellowship Night',
+    date: '2027-07-23',
+    time_start: '14:00',
+    time_end: '16:30',
+    time_display: '2:00 PM – 4:30 PM',
+    title: 'National Bible Bowl & Scripture Showcase',
+    description: 'Inter-church scripture memory quiz, creative presentations, and awards.',
+    location: 'Auditorium',
+    speaker: 'Academic & Education Committee',
+    session_type: 'workshop',
+    sort_order: 5,
+  },
+  {
+    id: 'sch_d3_06',
+    event_id: 'vlc-2027',
+    day_number: 3,
+    day_title: 'Day 3 • Empowerment & Fellowship Night',
+    date: '2027-07-23',
+    time_start: '19:00',
+    time_end: '22:00',
+    time_display: '7:00 PM – 10:00 PM',
+    title: 'Campfire Acoustic Night & Testimony Rally',
+    description: 'Outdoor praise around the campfire, delegate testimonies, and celebration of grace.',
+    location: 'Open Campfire Grounds',
+    speaker: 'All Delegations',
+    session_type: 'rally',
+    sort_order: 6,
+  },
+  // Day 4
+  {
+    id: 'sch_d4_01',
+    event_id: 'vlc-2027',
+    day_number: 4,
+    day_title: 'Day 4 • Commissioning & Send-Off',
+    date: '2027-07-24',
+    time_start: '07:00',
+    time_end: '08:00',
+    time_display: '7:00 AM – 8:00 AM',
+    title: 'Final Camp Breakfast',
+    description: 'Final morning meal together with friends and mentors.',
+    location: 'Dining Hall',
+    speaker: 'Kitchen Committee',
+    session_type: 'meal',
+    sort_order: 1,
+  },
+  {
+    id: 'sch_d4_02',
+    event_id: 'vlc-2027',
+    day_number: 4,
+    day_title: 'Day 4 • Commissioning & Send-Off',
+    date: '2027-07-24',
+    time_start: '08:30',
+    time_end: '11:30',
+    time_display: '8:30 AM – 11:30 AM',
+    title: 'Grand Commissioning Service & Holy Communion',
+    description: 'Anointing of delegates, Holy Communion, certificate distribution, and send-off charge.',
+    location: 'Main Sanctuary',
+    speaker: 'PCCI General Presbytery',
+    session_type: 'rally',
+    sort_order: 2,
+  },
+  {
+    id: 'sch_d4_03',
+    event_id: 'vlc-2027',
+    day_number: 4,
+    day_title: 'Day 4 • Commissioning & Send-Off',
+    date: '2027-07-24',
+    time_start: '11:45',
+    time_end: '13:00',
+    time_display: '11:45 AM – 1:00 PM',
+    title: 'Victory Luncheon & Delegation Photos',
+    description: 'Official camp photo shoot per church and farewell banquet.',
+    location: 'Courtyard & Grounds',
+    speaker: 'Media Secretariat',
+    session_type: 'meal',
+    sort_order: 3,
+  },
+  {
+    id: 'sch_d4_04',
+    event_id: 'vlc-2027',
+    day_number: 4,
+    day_title: 'Day 4 • Commissioning & Send-Off',
+    date: '2027-07-24',
+    time_start: '13:00',
+    time_end: '15:00',
+    time_display: '1:00 PM – 3:00 PM',
+    title: 'Delegation Departure & Travel Mercies',
+    description: 'Cabin checkout and safe homeward journey across the provinces.',
+    location: 'Gate Departure Terminal',
+    speaker: 'Transport Committee',
+    session_type: 'general',
+    sort_order: 4,
+  },
 ];
 
 const INITIAL_CAMPERS: CamperRegistration[] = [
@@ -125,6 +509,566 @@ const INITIAL_CAMPERS: CamperRegistration[] = [
     status: 'registered',
     kit_claimed: 0,
     created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+  },
+  {
+    id: 'cmp_104',
+    church_id: 'ch_jia_centro1',
+    church_name: 'Jesus Is Alive Worship Center - Centro 1',
+    church_slug: 'jia-centro1-lasam',
+    role: 'worship',
+    full_name: 'Chloe Danielle Santos',
+    nickname: 'Chloe',
+    gender: 'female',
+    age: 20,
+    email: 'chloe.santos@email.com',
+    phone: '+639237778899',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Lorna Santos',
+    emergency_phone: '+639234443322',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Praise & Worship', 'Vocalist'],
+    favorite_verse: 'Isaiah 60:1',
+    verse_reflection: 'Arise, shine, for your light has come, and the glory of the Lord rises upon you!',
+    selfie_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-6192',
+    activation_token: 'act_chloe_104',
+    status: 'activated',
+    kit_claimed: 1,
+    created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+  },
+  {
+    id: 'cmp_105',
+    church_id: 'ch_jia_buag',
+    church_name: 'Jesus Is Alive Worship Center - Buag',
+    church_slug: 'jia-buag-bambang',
+    role: 'counselor',
+    full_name: 'David Paul Villanueva',
+    nickname: 'Dave',
+    gender: 'male',
+    age: 23,
+    email: 'david.villanueva@email.com',
+    phone: '+639174445566',
+    province: 'Nueva Vizcaya',
+    city: 'Bambang',
+    dietary_needs: 'None',
+    emergency_name: 'Cynthia Villanueva',
+    emergency_phone: '+639178881122',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Youth Leadership', 'Prayer & Intercession'],
+    favorite_verse: '1 Timothy 4:12',
+    verse_reflection: 'Don’t let anyone look down on you because you are young, but set an example for the believers.',
+    selfie_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-7241',
+    activation_token: 'act_dave_105',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+  },
+  {
+    id: 'cmp_106',
+    church_id: 'ch_jia_buguey',
+    church_name: 'Jesus Is Alive Worship Center - San Lorenzo',
+    church_slug: 'jia-san-lorenzo-buguey',
+    role: 'first_timer',
+    full_name: 'Sarah Joy Balisi',
+    nickname: 'Sarah',
+    gender: 'female',
+    age: 19,
+    email: 'sarah.balisi@email.com',
+    phone: '+639185556677',
+    province: 'Cagayan',
+    city: 'Buguey',
+    dietary_needs: 'None',
+    emergency_name: 'Antonio Balisi',
+    emergency_phone: '+639187779900',
+    emergency_relation: 'Father',
+    ministry_interests: ['Children Ministry', 'Media & Tech'],
+    favorite_verse: 'Proverbs 3:5-6',
+    verse_reflection: 'Trust in the Lord with all your heart and lean not on your own understanding.',
+    selfie_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-4489',
+    activation_token: 'act_sarah_106',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 20).toISOString(),
+  },
+  {
+    id: 'cmp_107',
+    church_id: 'ch_cog_almaguer',
+    church_name: 'Church of God Christian Fellowship (JIA Almaguer)',
+    church_slug: 'cog-cf-jia-almaguer',
+    role: 'worship',
+    full_name: 'Grace Nicole Aquino',
+    nickname: 'Grace',
+    gender: 'female',
+    age: 22,
+    email: 'grace.aquino@email.com',
+    phone: '+639201112244',
+    province: 'Nueva Vizcaya',
+    city: 'Bambang',
+    dietary_needs: 'None',
+    emergency_name: 'Elena Aquino',
+    emergency_phone: '+639203334411',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Praise & Worship', 'Acoustic Guitar'],
+    favorite_verse: 'Psalm 46:1',
+    verse_reflection: 'God is our refuge and strength, an ever-present help in trouble.',
+    selfie_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-9311',
+    activation_token: 'act_grace_107',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 14).toISOString(),
+  },
+  {
+    id: 'cmp_108',
+    church_id: 'ch_jia_amunitan',
+    church_name: 'Jesus Is Alive Worship Center - Amunitan',
+    church_slug: 'jia-amunitan-gonzaga',
+    role: 'worship',
+    full_name: 'Nathaniel Joseph Perez',
+    nickname: 'Nathan',
+    gender: 'male',
+    age: 21,
+    email: 'nathan.perez@email.com',
+    phone: '+639173332211',
+    province: 'Cagayan',
+    city: 'Gonzaga',
+    dietary_needs: 'None',
+    emergency_name: 'Marites Perez',
+    emergency_phone: '+639178883344',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Praise & Worship', 'Bass Guitar'],
+    favorite_verse: 'Psalm 150:6',
+    verse_reflection: 'Let everything that has breath praise the Lord!',
+    selfie_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-3321',
+    activation_token: 'act_nathan_108',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 16).toISOString(),
+  },
+  {
+    id: 'cmp_109',
+    church_id: 'ch_jia_ipil',
+    church_name: 'Jesus Is Alive Worship Center - Purok 1 Ipil',
+    church_slug: 'jia-ipil-gonzaga',
+    role: 'first_timer',
+    full_name: 'Faith Angela Cruz',
+    nickname: 'Faith',
+    gender: 'female',
+    age: 18,
+    email: 'faith.cruz@email.com',
+    phone: '+639194445566',
+    province: 'Cagayan',
+    city: 'Gonzaga',
+    dietary_needs: 'None',
+    emergency_name: 'Eduardo Cruz',
+    emergency_phone: '+639192223311',
+    emergency_relation: 'Father',
+    ministry_interests: ['Creative Dance', 'Children Ministry'],
+    favorite_verse: 'Hebrews 11:1',
+    verse_reflection: 'Now faith is confidence in what we hope for and assurance about what we do not see.',
+    selfie_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-8120',
+    activation_token: 'act_faith_109',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 11).toISOString(),
+  },
+  {
+    id: 'cmp_110',
+    church_id: 'ch_jia_tucalan',
+    church_name: 'Jesus Is Alive Worship Center - Tucalan Passing',
+    church_slug: 'jia-tucalan-lasam',
+    role: 'counselor',
+    full_name: 'Mark Anthony Lopez',
+    nickname: 'Mark',
+    gender: 'male',
+    age: 24,
+    email: 'mark.lopez@email.com',
+    phone: '+639186667788',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Luzviminda Lopez',
+    emergency_phone: '+639184441122',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Youth Discipleship', 'Camp Counseling'],
+    favorite_verse: 'Philippians 4:13',
+    verse_reflection: 'I can do all things through Christ who gives me strength.',
+    selfie_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-1194',
+    activation_token: 'act_mark_110',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 22).toISOString(),
+  },
+  {
+    id: 'cmp_111',
+    church_id: 'ch_jia_nabannagan',
+    church_name: 'Jesus Is Alive - Nabannagan West',
+    church_slug: 'jia-nabannagan-lasam',
+    role: 'camper',
+    full_name: 'Caleb Joshua Dizon',
+    nickname: 'Caleb',
+    gender: 'male',
+    age: 20,
+    email: 'caleb.dizon@email.com',
+    phone: '+639225556677',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Jonathan Dizon',
+    emergency_phone: '+639227778899',
+    emergency_relation: 'Father',
+    ministry_interests: ['Media & Tech', 'Logistics'],
+    favorite_verse: 'Joshua 24:15',
+    verse_reflection: 'As for me and my household, we will serve the Lord.',
+    selfie_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-7742',
+    activation_token: 'act_caleb_111',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 7).toISOString(),
+  },
+  {
+    id: 'cmp_112',
+    church_id: 'ch_jia_new_orlins',
+    church_name: 'Jesus Is Alive Worship Center - New Orlins',
+    church_slug: 'jia-new-orlins-lasam',
+    role: 'camper',
+    full_name: 'Kyla Mae Pascual',
+    nickname: 'Kyla',
+    gender: 'female',
+    age: 19,
+    email: 'kyla.pascual@email.com',
+    phone: '+639178889900',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Virginia Pascual',
+    emergency_phone: '+639172221100',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Creative Arts', 'Ushering'],
+    favorite_verse: 'Psalm 23:1',
+    verse_reflection: 'The Lord is my shepherd, I lack nothing.',
+    selfie_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-5102',
+    activation_token: 'act_kyla_112',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 15).toISOString(),
+  },
+  {
+    id: 'cmp_113',
+    church_id: 'ch_jia_callao',
+    church_name: 'Jesus Is Alive Worship Center - Callao Sur',
+    church_slug: 'jia-callao-sur-lasam',
+    role: 'worship',
+    full_name: 'James Matthew Tan',
+    nickname: 'James',
+    gender: 'male',
+    age: 22,
+    email: 'james.tan@email.com',
+    phone: '+639193337788',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Rebecca Tan',
+    emergency_phone: '+639194448899',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Praise & Worship', 'Drums'],
+    favorite_verse: 'Colossians 3:16',
+    verse_reflection: 'Sing psalms, hymns, and spiritual songs with gratitude in your hearts to God.',
+    selfie_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-6831',
+    activation_token: 'act_james_113',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 9).toISOString(),
+  },
+  {
+    id: 'cmp_114',
+    church_id: 'ch_jia_minanga',
+    church_name: 'Jesus Is Alive Worship Center - Minanga Sur',
+    church_slug: 'jia-minanga-sur-lasam',
+    role: 'first_timer',
+    full_name: 'Joy Abigail Perez',
+    nickname: 'Joy',
+    gender: 'female',
+    age: 18,
+    email: 'joy.perez@email.com',
+    phone: '+639206665544',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Marlon Perez',
+    emergency_phone: '+639207771122',
+    emergency_relation: 'Father',
+    ministry_interests: ['Youth Fellowship', 'Hospitality'],
+    favorite_verse: 'Nehemiah 8:10',
+    verse_reflection: 'The joy of the Lord is your strength!',
+    selfie_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-2940',
+    activation_token: 'act_joy_114',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 25).toISOString(),
+  },
+  {
+    id: 'cmp_115',
+    church_id: 'ch_jia_ibj',
+    church_name: 'Jesus Is Alive Worship Center - IBJ',
+    church_slug: 'jia-ibj-lasam',
+    role: 'staff',
+    full_name: 'Gabriel Sean Ramos',
+    nickname: 'Gabe',
+    gender: 'male',
+    age: 25,
+    email: 'gabe.ramos@email.com',
+    phone: '+639189991122',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Patricia Ramos',
+    emergency_phone: '+639185552233',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Camp Administration', 'Safety & Security'],
+    favorite_verse: 'Galatians 6:9',
+    verse_reflection: 'Let us not become weary in doing good, for at the proper time we will reap a harvest.',
+    selfie_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-9012',
+    activation_token: 'act_gabe_115',
+    status: 'activated',
+    kit_claimed: 1,
+    created_at: new Date(Date.now() - 3600000 * 30).toISOString(),
+  },
+  {
+    id: 'cmp_116',
+    church_id: 'ch_jia_allannay',
+    church_name: 'Jesus Is Alive Worship Center - Allannay',
+    church_slug: 'jia-allannay-lasam',
+    role: 'camper',
+    full_name: 'Bea Louise Torres',
+    nickname: 'Bea',
+    gender: 'female',
+    age: 20,
+    email: 'bea.torres@email.com',
+    phone: '+639234445566',
+    province: 'Cagayan',
+    city: 'Lasam',
+    dietary_needs: 'None',
+    emergency_name: 'Danilo Torres',
+    emergency_phone: '+639238889900',
+    emergency_relation: 'Father',
+    ministry_interests: ['Visual Arts', 'Decoration'],
+    favorite_verse: 'Psalm 139:14',
+    verse_reflection: 'I praise you because I am fearfully and wonderfully made.',
+    selfie_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-3851',
+    activation_token: 'act_bea_116',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 19).toISOString(),
+  },
+  {
+    id: 'cmp_117',
+    church_id: 'ch_jia_sta_teresita',
+    church_name: 'Jesus Is Alive Worship Center - Alucao & Bungkag',
+    church_slug: 'jia-alucao-sta-teresita',
+    role: 'counselor',
+    full_name: 'Timothy John Reyes',
+    nickname: 'Timmy',
+    gender: 'male',
+    age: 23,
+    email: 'timmy.reyes@email.com',
+    phone: '+639177773322',
+    province: 'Cagayan',
+    city: 'Sta. Teresita',
+    dietary_needs: 'None',
+    emergency_name: 'Corazon Reyes',
+    emergency_phone: '+639176664411',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Cabin Mentoring', 'Youth Outreach'],
+    favorite_verse: '2 Timothy 1:7',
+    verse_reflection: 'For God has not given us a spirit of fear, but of power, love, and self-discipline.',
+    selfie_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-4672',
+    activation_token: 'act_timmy_117',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 13).toISOString(),
+  },
+  {
+    id: 'cmp_118',
+    church_id: 'ch_jia_upacan',
+    church_name: 'Jesus Is Alive - Upacan',
+    church_slug: 'jia-upacan-bambang',
+    role: 'worship',
+    full_name: 'Leah Marie Fernandez',
+    nickname: 'Leah',
+    gender: 'female',
+    age: 21,
+    email: 'leah.fernandez@email.com',
+    phone: '+639198884433',
+    province: 'Nueva Vizcaya',
+    city: 'Bambang',
+    dietary_needs: 'None',
+    emergency_name: 'Bernardo Fernandez',
+    emergency_phone: '+639191118877',
+    emergency_relation: 'Father',
+    ministry_interests: ['Praise & Worship', 'Violin / Strings'],
+    favorite_verse: 'Psalm 91:1-2',
+    verse_reflection: 'Whoever dwells in the shelter of the Most High will rest in the shadow of the Almighty.',
+    selfie_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-7299',
+    activation_token: 'act_leah_118',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 17).toISOString(),
+  },
+  {
+    id: 'cmp_119',
+    church_id: 'ch_jia_santo_domingo',
+    church_name: 'Jesus Is Alive - Santo Domingo',
+    church_slug: 'jia-santo-domingo-bambang',
+    role: 'camper',
+    full_name: 'Lucas Aaron Diaz',
+    nickname: 'Luke',
+    gender: 'male',
+    age: 20,
+    email: 'luke.diaz@email.com',
+    phone: '+639205559988',
+    province: 'Nueva Vizcaya',
+    city: 'Bambang',
+    dietary_needs: 'None',
+    emergency_name: 'Teresa Diaz',
+    emergency_phone: '+639203332211',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Sports Ministry', 'Media'],
+    favorite_verse: '1 Corinthians 9:24',
+    verse_reflection: 'Run in such a way as to get the prize.',
+    selfie_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-5820',
+    activation_token: 'act_luke_119',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 21).toISOString(),
+  },
+  {
+    id: 'cmp_120',
+    church_id: 'ch_jia_gifta',
+    church_name: 'Jesus Is Alive - Gifta, Almaguer North',
+    church_slug: 'jia-gifta-almaguer-bambang',
+    role: 'first_timer',
+    full_name: 'Rachel Ann Castro',
+    nickname: 'Rachel',
+    gender: 'female',
+    age: 18,
+    email: 'rachel.castro@email.com',
+    phone: '+639171119933',
+    province: 'Nueva Vizcaya',
+    city: 'Bambang',
+    dietary_needs: 'None',
+    emergency_name: 'Emilio Castro',
+    emergency_phone: '+639174447788',
+    emergency_relation: 'Father',
+    ministry_interests: ['Creative Arts', 'Children Ministry'],
+    favorite_verse: 'Romans 8:28',
+    verse_reflection: 'In all things God works for the good of those who love him.',
+    selfie_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-1456',
+    activation_token: 'act_rachel_120',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 10).toISOString(),
+  },
+  {
+    id: 'cmp_121',
+    church_id: 'ch_jia_mauan',
+    church_name: 'Jesus Is Alive - Mauan',
+    church_slug: 'jia-mauan-bambang',
+    role: 'camper',
+    full_name: 'Philip Andrew Gomez',
+    nickname: 'Philip',
+    gender: 'male',
+    age: 22,
+    email: 'philip.gomez@email.com',
+    phone: '+639182226677',
+    province: 'Nueva Vizcaya',
+    city: 'Bambang',
+    dietary_needs: 'None',
+    emergency_name: 'Clarissa Gomez',
+    emergency_phone: '+639189993344',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Evangelism', 'Ushering'],
+    favorite_verse: 'Romans 1:16',
+    verse_reflection: 'For I am not ashamed of the gospel, because it is the power of God that brings salvation.',
+    selfie_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-6310',
+    activation_token: 'act_philip_121',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+  },
+  {
+    id: 'cmp_122',
+    church_id: 'ch_jia_san_antonio',
+    church_name: 'Jesus Is Alive - San Antonio North',
+    church_slug: 'jia-san-antonio-bambang',
+    role: 'worship',
+    full_name: 'Abigail Faye Morales',
+    nickname: 'Abby',
+    gender: 'female',
+    age: 20,
+    email: 'abby.morales@email.com',
+    phone: '+639197771122',
+    province: 'Nueva Vizcaya',
+    city: 'Bambang',
+    dietary_needs: 'None',
+    emergency_name: 'Vicente Morales',
+    emergency_phone: '+639198886655',
+    emergency_relation: 'Father',
+    ministry_interests: ['Praise & Worship', 'Keyboard'],
+    favorite_verse: 'Psalm 63:1',
+    verse_reflection: 'You, God, are my God, earnestly I seek you; my whole being longs for you.',
+    selfie_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-8941',
+    activation_token: 'act_abby_122',
+    status: 'registered',
+    kit_claimed: 0,
+    created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
+  },
+  {
+    id: 'cmp_123',
+    church_id: 'ch_jia_mangayang',
+    church_name: 'Jesus Is Alive - Mangayang',
+    church_slug: 'jia-mangayang-dupax',
+    role: 'staff',
+    full_name: 'Daniel Keith Bautista',
+    nickname: 'Dan',
+    gender: 'male',
+    age: 26,
+    email: 'dan.bautista@email.com',
+    phone: '+639208883344',
+    province: 'Nueva Vizcaya',
+    city: 'Dupax Del Norte',
+    dietary_needs: 'None',
+    emergency_name: 'Lorena Bautista',
+    emergency_phone: '+639204447788',
+    emergency_relation: 'Mother',
+    ministry_interests: ['Camp Coordination', 'Youth Pastorate'],
+    favorite_verse: 'Micah 6:8',
+    verse_reflection: 'To act justly and to love mercy and to walk humbly with your God.',
+    selfie_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+    activation_code: 'VLC-2560',
+    activation_token: 'act_dan_123',
+    status: 'activated',
+    kit_claimed: 1,
+    created_at: new Date(Date.now() - 3600000 * 28).toISOString(),
   }
 ];
 
@@ -259,6 +1203,31 @@ class CampApiService {
     };
   }
 
+  private enrichChurchesWithSignups(churches: Church[]): Church[] {
+    const campers = this.getLocalCampers();
+    return churches.map((ch) => {
+      const existingSignups = ch.signups || [];
+      const localSignups = campers
+        .filter((c) => c.church_id === ch.id)
+        .map((c) => ({
+          id: c.id || '',
+          nickname: c.nickname || c.full_name?.split(' ')[0] || 'Delegate',
+          full_name: c.full_name,
+          role: c.role,
+          selfie_url: c.selfie_url,
+        }));
+      
+      const signupMap = new Map<string, typeof existingSignups[0]>();
+      for (const s of [...existingSignups, ...localSignups]) {
+        if (s.id) signupMap.set(s.id, s);
+      }
+      return {
+        ...ch,
+        signups: Array.from(signupMap.values()),
+      };
+    });
+  }
+
   // 2. Fetch churches
   async getChurches(slug?: string): Promise<Church[]> {
     try {
@@ -267,13 +1236,13 @@ class CampApiService {
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : [data];
-        if (list.length > 0) return list;
+        if (list.length > 0) return this.enrichChurchesWithSignups(list);
       }
     } catch {
       // Fallback
     }
 
-    const localList = this.getLocalChurches();
+    const localList = this.enrichChurchesWithSignups(this.getLocalChurches());
     if (slug) {
       const found = localList.find((c) => c.slug.toLowerCase() === slug.toLowerCase());
       return found ? [found] : [];
@@ -787,6 +1756,102 @@ class CampApiService {
     return list;
   }
 
+  // 15b. Admin ID Printing Queue: Get Queue & Metrics
+  async getBadgeQueue(params?: {
+    event_id?: string;
+    church_id?: string;
+    print_status?: string;
+    search?: string;
+  }): Promise<BadgeQueueResponse> {
+    try {
+      const urlParams = new URLSearchParams();
+      if (params?.event_id) urlParams.append('event_id', params.event_id);
+      if (params?.church_id) urlParams.append('church_id', params.church_id);
+      if (params?.print_status) urlParams.append('print_status', params.print_status);
+      if (params?.search) urlParams.append('search', params.search);
+
+      const res = await fetch(`/api/admin/badges/queue?${urlParams.toString()}`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Fallback
+    }
+
+    const campers = this.getLocalCampers();
+    const delegates: QueueDelegate[] = campers.map((c) => ({
+      registration_id: 'reg_' + (c.id || Math.random().toString(36).substring(2)),
+      event_id: c.event_id || 'vlc-2027',
+      camper_id: c.id || 'cmp_local',
+      full_name: c.full_name,
+      nickname: c.nickname,
+      gender: c.gender,
+      age: c.age,
+      birthdate: c.birthdate,
+      email: c.email,
+      phone: c.phone,
+      province: c.province,
+      city: c.city,
+      dietary_needs: c.dietary_needs,
+      emergency_name: c.emergency_name,
+      emergency_phone: c.emergency_phone,
+      emergency_relation: c.emergency_relation,
+      favorite_verse: c.favorite_verse,
+      verse_reflection: c.verse_reflection,
+      selfie_url: c.selfie_url,
+      activation_code: c.activation_code || 'VLC-LOCAL',
+      activation_token: c.activation_token || 'act_local',
+      role: c.role,
+      status: c.status || 'registered',
+      print_count: c.print_count || 0,
+      last_printed_at: c.last_printed_at,
+      last_printed_by: c.last_printed_by,
+      reprint_reason: c.reprint_reason,
+      checked_in_at: c.checked_in_at,
+      kit_claimed: c.kit_claimed || 0,
+      church_id: c.church_id,
+      church_name: c.church_name,
+      created_at: c.created_at,
+    }));
+
+    return {
+      success: true,
+      stats: {
+        total_in_queue: delegates.length,
+        unprinted_count: delegates.filter((d) => d.print_count === 0).length,
+        printed_count: delegates.filter((d) => d.print_count === 1).length,
+        reprint_count: delegates.filter((d) => d.print_count > 1).length,
+      },
+      delegates,
+    };
+  }
+
+  // 15c. Admin ID Printing Queue: Record Print / Reprint
+  async recordBadgePrint(params: {
+    registration_ids?: string[];
+    camper_ids?: string[];
+    event_id?: string;
+    admin_id?: string;
+    reason?: string;
+    action?: 'print' | 'reprint' | 'reset';
+  }): Promise<{ success: boolean; updated_count?: number; message?: string; error?: string }> {
+    try {
+      const res = await fetch('/api/admin/badges/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return data;
+      }
+      return { success: false, error: data.error || 'Failed to record badge print' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error recording badge print';
+      return { success: false, error: msg };
+    }
+  }
+
   // 16. Admin Check-in Desk: Perform Action
   async checkInCamper(params: {
     camper_id?: string;
@@ -860,7 +1925,29 @@ class CampApiService {
     };
   }
 
-  // 17. Update Camper Profile (Selfie, Personal info, Emergency, Verse)
+  // 17. Retrieve Camper Profile
+  async getCamperProfile(id: string): Promise<{ success: boolean; camper?: CamperRegistration; error?: string }> {
+    try {
+      const res = await fetch(`/api/camper/profile?id=${encodeURIComponent(id)}`);
+      if (res.ok) {
+        const data = (await res.json()) as { success: boolean; camper?: CamperRegistration };
+        if (data.camper) {
+          return { success: true, camper: data.camper };
+        }
+      }
+    } catch (e) {
+      console.warn('API getCamperProfile failed, falling back to local storage:', e);
+    }
+
+    const campers = this.getLocalCampers();
+    const found = campers.find((c) => c.id === id || c.activation_code?.toUpperCase() === id.toUpperCase());
+    if (found) {
+      return { success: true, camper: found };
+    }
+    return { success: false, error: 'Camper profile not found' };
+  }
+
+  // 18. Update Camper Profile (Selfie, Personal info, Emergency, Verse)
   async updateProfile(
     camperId: string,
     updates: Partial<CamperRegistration>
@@ -1052,12 +2139,18 @@ class CampApiService {
         if (slug && data.event) {
           return { events: [data.event], active_event: data.event };
         }
-        return { events: data.events || [], active_event: data.active_event || null };
+        if (data.events && data.events.length > 0) {
+          return { events: data.events, active_event: data.active_event || data.events.find(e => e.status === 'active') || data.events[0] };
+        }
       }
-      return { events: [], active_event: null, error: 'Failed to fetch events' };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Network error fetching events';
-      return { events: [], active_event: null, error: msg };
+      // Fallback to initial events
+      const fallbackList = [...INITIAL_CAMP_EVENTS];
+      const active = fallbackList.find(e => (slug ? e.slug === slug : e.status === 'active')) || fallbackList[0];
+      return { events: fallbackList, active_event: active };
+    } catch {
+      const fallbackList = [...INITIAL_CAMP_EVENTS];
+      const active = fallbackList.find(e => (slug ? e.slug === slug : e.status === 'active')) || fallbackList[0];
+      return { events: fallbackList, active_event: active };
     }
   }
 
@@ -1086,12 +2179,16 @@ class CampApiService {
       const res = await fetch(`/api/events/schedule?event_id=${encodeURIComponent(eventId)}`);
       if (res.ok) {
         const data = (await res.json()) as { schedules?: EventScheduleItem[]; event_id?: string };
-        return { schedules: data.schedules || [], event_id: data.event_id || eventId };
+        if (data.schedules && data.schedules.length > 0) {
+          return { schedules: data.schedules, event_id: data.event_id || eventId };
+        }
       }
-      return { schedules: [], event_id: eventId, error: 'Failed to fetch schedule' };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Network error fetching schedule';
-      return { schedules: [], event_id: eventId, error: msg };
+      // Fallback to initial schedules matching event
+      const fallback = INITIAL_EVENT_SCHEDULES.filter(s => s.event_id === eventId);
+      return { schedules: fallback.length > 0 ? fallback : INITIAL_EVENT_SCHEDULES, event_id: eventId };
+    } catch {
+      const fallback = INITIAL_EVENT_SCHEDULES.filter(s => s.event_id === eventId);
+      return { schedules: fallback.length > 0 ? fallback : INITIAL_EVENT_SCHEDULES, event_id: eventId };
     }
   }
 
@@ -1196,6 +2293,124 @@ class CampApiService {
       return { success: false, error: data.error || 'Failed to join event' };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Network error joining event';
+      return { success: false, error: msg };
+    }
+  }
+
+  // 29. Upload Media (Images and Videos) to Cloudflare R2
+  async uploadMedia(
+    fileOrData: File | Blob | string,
+    options: {
+      folder?: string;
+      eventId?: string;
+      isPrimary?: boolean;
+      title?: string;
+      description?: string;
+      fileName?: string;
+    } = {}
+  ): Promise<{ success: boolean; url?: string; r2_key?: string; media?: MediaItem; error?: string }> {
+    try {
+      let res: Response;
+
+      if (typeof fileOrData === 'string') {
+        res = await fetch('/api/media/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_data: fileOrData,
+            file_name: options.fileName,
+            folder: options.folder || 'events',
+            event_id: options.eventId || 'vlc-2027',
+            title: options.title,
+            description: options.description,
+            is_primary: options.isPrimary,
+          }),
+        });
+      } else {
+        const formData = new FormData();
+        formData.append('file', fileOrData, options.fileName || (fileOrData instanceof File ? fileOrData.name : 'upload.bin'));
+        if (options.folder) formData.append('folder', options.folder);
+        if (options.eventId) formData.append('event_id', options.eventId);
+        if (options.title) formData.append('title', options.title);
+        if (options.description) formData.append('description', options.description);
+        if (options.isPrimary) formData.append('is_primary', 'true');
+
+        res = await fetch('/api/media/upload', {
+          method: 'POST',
+          body: formData,
+        });
+      }
+
+      const data = (await res.json()) as { success?: boolean; url?: string; r2_key?: string; media?: MediaItem; error?: string };
+      if (res.ok && data.success) {
+        return {
+          success: true,
+          url: data.url,
+          r2_key: data.r2_key,
+          media: data.media,
+        };
+      }
+      return { success: false, error: data.error || 'Failed to upload media to Cloudflare R2' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error uploading to R2';
+      return { success: false, error: msg };
+    }
+  }
+
+  // 30. Get Media Items (Images & Videos)
+  async getMedia(options: { type?: 'image' | 'video'; eventId?: string; limit?: number } = {}): Promise<{ success: boolean; items: MediaItem[]; error?: string }> {
+    try {
+      const params = new URLSearchParams();
+      if (options.type) params.set('type', options.type);
+      if (options.eventId) params.set('event_id', options.eventId);
+      if (options.limit) params.set('limit', String(options.limit));
+
+      const res = await fetch(`/api/media?${params.toString()}`);
+      if (res.ok) {
+        const data = (await res.json()) as { success?: boolean; items?: MediaItem[] };
+        return { success: true, items: data.items || [] };
+      }
+      return { success: false, items: [], error: 'Failed to fetch media list' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error fetching media list';
+      return { success: false, items: [], error: msg };
+    }
+  }
+
+  // 31. Delete Media Item from Cloudflare R2
+  async deleteMedia(idOrKey: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const isKey = idOrKey.includes('/') || idOrKey.includes('.');
+      const param = isKey ? `key=${encodeURIComponent(idOrKey)}` : `id=${encodeURIComponent(idOrKey)}`;
+      const res = await fetch(`/api/media?${param}`, {
+        method: 'DELETE',
+      });
+      const data = (await res.json()) as { success?: boolean; error?: string };
+      if (res.ok && data.success) {
+        return { success: true };
+      }
+      return { success: false, error: data.error || 'Failed to delete media' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error deleting media';
+      return { success: false, error: msg };
+    }
+  }
+
+  // 32. Set Event Primary Image
+  async setEventPrimaryImage(eventId: string, imageUrl: string, mediaId?: string): Promise<{ success: boolean; primary_image_url?: string; error?: string }> {
+    try {
+      const res = await fetch('/api/media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_primary', event_id: eventId, url: imageUrl, id: mediaId }),
+      });
+      const data = (await res.json()) as { success?: boolean; primary_image_url?: string; error?: string };
+      if (res.ok && data.success) {
+        return { success: true, primary_image_url: data.primary_image_url };
+      }
+      return { success: false, error: data.error || 'Failed to set event primary image' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error setting primary image';
       return { success: false, error: msg };
     }
   }

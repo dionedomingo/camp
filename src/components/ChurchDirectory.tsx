@@ -1,50 +1,69 @@
 import { useState, type FC } from 'react';
 import { 
   Search, 
-  Copy, 
-  CheckCircle2, 
   Sparkles, 
   ArrowLeft, 
   Church as ChurchIcon, 
   MapPin, 
   User, 
   Users,
-  ExternalLink
+  ExternalLink,
+  Share2
 } from 'lucide-react';
 import type { Church, RegistrationStats } from '../types';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
+import { ShareChurchModal } from './ShareChurchModal';
 
 interface ChurchDirectoryProps {
   churches: Church[];
-  stats: RegistrationStats | null;
+  stats?: RegistrationStats | null;
   activeChurch: Church | null;
   onSelectChurch?: (church: Church) => void;
   onStartSignup: (church: Church) => void;
-  onBackToHome: () => void;
+  onBackToHome?: () => void;
+  onViewCamperProfile?: (camperId: string) => void;
+  isEmbedded?: boolean;
 }
+
+const ROLE_BADGE_STYLES: Record<string, string> = {
+  counselor: 'bg-purple-100 text-purple-800 border-purple-200',
+  camper: 'bg-blue-100 text-blue-800 border-blue-200',
+  first_timer: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  worship: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  staff: 'bg-amber-100 text-amber-800 border-amber-200',
+  coordinator: 'bg-sky-100 text-sky-800 border-sky-200',
+  admin: 'bg-zinc-900 text-amber-300 border-zinc-700',
+  pastor: 'bg-rose-100 text-rose-800 border-rose-200',
+  medical: 'bg-red-100 text-red-800 border-red-200',
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  counselor: 'Counselor',
+  camper: 'Camper',
+  first_timer: 'First-Timer 🌿',
+  worship: 'Worship',
+  staff: 'Staff',
+  coordinator: 'Coordinator',
+  admin: 'Admin',
+  pastor: 'Pastor',
+  medical: 'Medic',
+};
 
 export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
   churches,
-  stats,
   activeChurch,
   onSelectChurch,
   onStartSignup,
   onBackToHome,
+  onViewCamperProfile,
+  isEmbedded = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProvince, setSelectedProvince] = useState('all');
-  const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [sharingChurch, setSharingChurch] = useState<Church | null>(null);
+  const [activePopoverCamperId, setActivePopoverCamperId] = useState<string | null>(null);
 
   const provinces = ['all', 'Cagayan', 'Nueva Vizcaya', 'Open / Other'];
-
-  // Map breakdown counts from stats if available
-  const churchCountsMap = new Map<string, number>();
-  if (stats?.churchBreakdown) {
-    stats.churchBreakdown.forEach((b) => {
-      churchCountsMap.set(b.id, b.count);
-    });
-  }
 
   // Separate regular PCCI churches from independent delegate
   const pcciChurches = churches.filter((c) => c.id !== 'ch_open_delegate');
@@ -71,35 +90,26 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
     return matchesSearch && matchesProvince;
   });
 
-  const handleCopyLink = (slug: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const url = `${window.location.origin}${window.location.pathname}?church=${slug}`;
-    navigator.clipboard.writeText(url);
-    setCopiedSlug(slug);
-    setTimeout(() => setCopiedSlug(null), 2500);
-  };
-
   return (
-    <div className="space-y-8 pb-20 max-w-5xl mx-auto animate-fadeIn">
+    <div id="delegations" className="space-y-8 pb-20 max-w-5xl mx-auto animate-fadeIn scroll-mt-20">
       {/* Top Navigation & Header */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBackToHome}
-            className="text-xs text-zinc-600 hover:text-zinc-900 gap-1.5 -ml-2 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Camp Overview</span>
-          </Button>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#0b57d0] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-              {pcciChurches.length} Congregations Synced
-            </span>
+      {!isEmbedded && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            {onBackToHome && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBackToHome}
+                className="text-xs text-zinc-600 hover:text-zinc-900 gap-1.5 -ml-2 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Official Schedule</span>
+              </Button>
+            )}
           </div>
         </div>
+      )}
 
         {/* Page Title & Mission */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-zinc-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] space-y-4">
@@ -108,16 +118,11 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
               <ChurchIcon className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
-                  Church Delegations &amp; Invite Links
-                </h1>
-                <Badge variant="outline" className="hidden sm:inline-flex text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 uppercase font-mono">
-                  Live Quotas
-                </Badge>
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
+                Church Delegations &amp; Invite Links
+              </h1>
               <p className="text-xs sm:text-sm text-zinc-600 max-w-2xl leading-relaxed">
-                Find your Jesus Is Alive Worship Center delegation, track registration standings against delegate quotas, or copy your delegation&apos;s unique invitation link to rally your youth and leaders.
+                Find your Jesus Is Alive Worship Center delegation, meet your fellow delegates, or share your delegation&apos;s unique invitation link to rally your youth and leaders.
               </p>
             </div>
           </div>
@@ -152,9 +157,8 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Churches Grid with Live Quota and Copy Link */}
+      {/* Simplified Churches Grid */}
       <div className="space-y-4">
         <div className="flex items-center justify-between text-xs font-semibold text-zinc-600 px-1">
           <span>Showing {filtered.length} of {pcciChurches.length} delegations</span>
@@ -164,9 +168,12 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((church, idx) => {
             const isSelected = activeChurch?.id === church.id;
-            const registeredCount = churchCountsMap.get(church.id) ?? church.registered_count ?? 0;
-            const quota = church.target_quota || 35;
-            const percentFilled = Math.min(100, Math.round((registeredCount / quota) * 100));
+            const signups = church.signups || [];
+            const isQuotaReached = Boolean(
+              church.target_quota &&
+              church.target_quota > 0 &&
+              ((church.registered_count || signups.length || 0) >= church.target_quota)
+            );
 
             return (
               <div
@@ -196,11 +203,18 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
                       </div>
                     </div>
 
-                    {isSelected && (
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#c2e7ff] text-[#001d35] shrink-0">
-                        Selected
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                      {isQuotaReached && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                          Quota Reached &bull; Waitlist
+                        </span>
+                      )}
+                      {isSelected && (
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#c2e7ff] text-[#001d35]">
+                          Selected
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {church.pastor_name && (
@@ -210,59 +224,161 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
                     </div>
                   )}
 
-                  {/* Quota Progress Bar */}
-                  <div className="space-y-1.5 pt-1">
+                  {/* Delegates / Signups Section with Selfies & Expanded Popover */}
+                  <div className="pt-2 border-t border-zinc-100 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-zinc-500 text-[11px] font-medium">Delegation Quota</span>
-                      <span className="font-semibold text-zinc-900 text-xs">
-                        <strong>{registeredCount}</strong> / {quota} delegates ({percentFilled}%)
+                      <span className="text-zinc-500 font-medium flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>Registered Delegates ({signups.length})</span>
                       </span>
-                    </div>
-                    <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          percentFilled >= 100
-                            ? 'bg-emerald-500'
-                            : percentFilled >= 50
-                            ? 'bg-[#0b57d0]'
-                            : 'bg-amber-500'
-                        }`}
-                        style={{ width: `${Math.max(5, percentFilled)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Shareable Invite Link Box */}
-                  <div className="bg-zinc-50/80 rounded-xl p-2.5 border border-zinc-200/70 flex items-center justify-between text-xs gap-2">
-                    <span className="font-mono text-[11px] text-zinc-600 truncate">
-                      ?church={church.slug}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => handleCopyLink(church.slug, e)}
-                      className={`tap-pill px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
-                        copiedSlug === church.slug
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-white hover:bg-zinc-100 text-[#0b57d0] border-zinc-200 shadow-2xs'
-                      }`}
-                    >
-                      {copiedSlug === church.slug ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5 text-zinc-500" />
-                          <span>Copy Link</span>
-                        </>
+                      {signups.length > 0 && (
+                        <span className="text-[10px] text-zinc-400">
+                          Hover or tap for badge
+                        </span>
                       )}
-                    </button>
+                    </div>
+
+                    {signups.length > 0 ? (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {signups.slice(0, 6).map((camper) => {
+                          const isPopoverOpen = activePopoverCamperId === camper.id;
+                          return (
+                            <div
+                              key={camper.id}
+                              className="relative"
+                              onMouseEnter={() => setActivePopoverCamperId(camper.id)}
+                              onMouseLeave={() => setActivePopoverCamperId(null)}
+                            >
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onViewCamperProfile?.(camper.id);
+                                }}
+                                onMouseEnter={() => setActivePopoverCamperId(camper.id)}
+                                className="group/avatar relative w-10 h-10 rounded-full ring-2 ring-white hover:ring-[#0b57d0] hover:scale-110 transition-all cursor-pointer shadow-2xs overflow-hidden shrink-0 bg-blue-50 focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
+                                aria-label={`View ${camper.nickname}'s badge and profile`}
+                              >
+                                {camper.selfie_url ? (
+                                  <img
+                                    src={camper.selfie_url}
+                                    alt={camper.nickname}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center font-bold text-xs text-[#0b57d0]">
+                                    {camper.nickname ? camper.nickname.charAt(0).toUpperCase() : 'C'}
+                                  </div>
+                                )}
+                              </button>
+
+                              {/* Expanded Popover */}
+                              {isPopoverOpen && (
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-white rounded-2xl p-4 shadow-[0_12px_36px_rgba(0,0,0,0.18)] border border-zinc-200 z-50 text-left animate-fadeIn"
+                                >
+                                  {/* Popover Arrow */}
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-white" />
+
+                                  <div className="flex items-start gap-3">
+                                    {/* Delegate Selfie Preview */}
+                                    <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-zinc-200 bg-zinc-50 shadow-2xs">
+                                      {camper.selfie_url ? (
+                                        <img
+                                          src={camper.selfie_url}
+                                          alt={camper.nickname}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center font-bold text-lg text-[#0b57d0]">
+                                          {camper.nickname ? camper.nickname.charAt(0).toUpperCase() : 'C'}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="space-y-1 min-w-0 flex-1">
+                                      {/* Official Badge Name (prominent nickname display) */}
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[9px] uppercase font-mono font-bold tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 inline-block">
+                                          Official Badge Name
+                                        </span>
+                                      </div>
+                                      <h4 className="font-extrabold text-base text-zinc-900 truncate leading-snug">
+                                        &ldquo;{camper.nickname}&rdquo;
+                                      </h4>
+
+                                      {/* Full Name & Role Badge (Counselor, Camper, First-Timer, Worship, Staff) */}
+                                      <div className="flex flex-col gap-0.5">
+                                        {camper.full_name && camper.full_name !== camper.nickname && (
+                                          <p className="text-xs text-zinc-600 truncate font-medium">
+                                            {camper.full_name}
+                                          </p>
+                                        )}
+                                        {camper.role && (
+                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block w-fit mt-0.5 ${ROLE_BADGE_STYLES[camper.role.toLowerCase()] || 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
+                                            {ROLE_LABELS[camper.role.toLowerCase()] || camper.role.replace('_', ' ')}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Direct link: camper/{id} */}
+                                  <a
+                                    href={`/camper/${camper.id}`}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setActivePopoverCamperId(null);
+                                      onViewCamperProfile?.(camper.id);
+                                    }}
+                                    className="mt-3.5 w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0b57d0] text-xs font-semibold flex items-center justify-between transition-colors border border-blue-200/80 cursor-pointer shadow-2xs"
+                                  >
+                                    <span className="flex items-center gap-1.5 font-mono text-[11px]">
+                                      <User className="w-3.5 h-3.5 shrink-0" />
+                                      camper/{camper.id}
+                                    </span>
+                                    <span className="text-[11px] flex items-center gap-1 font-bold">
+                                      View Profile <ExternalLink className="w-3 h-3" />
+                                    </span>
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {signups.length > 6 && (
+                          <span className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-600 font-bold text-xs flex items-center justify-center shrink-0">
+                            +{signups.length - 6}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-zinc-50/70 rounded-xl p-2.5 border border-dashed border-zinc-200 flex items-center gap-2 text-xs text-zinc-500">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>No signups yet &bull; Be the first delegate from this church!</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Card Action CTA */}
+                {/* Simplified Card Actions: Share Button & Register Button */}
                 <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSharingChurch(church);
+                    }}
+                    className="tap-pill py-2.5 px-3.5 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs shrink-0"
+                    title="Share delegation invite link"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-[#0b57d0]" />
+                    <span>Share</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={(e) => {
@@ -270,10 +386,14 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
                       onSelectChurch?.(church);
                       onStartSignup(church);
                     }}
-                    className="tap-pill flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#0b57d0] hover:bg-[#0842a0] text-white font-semibold text-xs transition-colors cursor-pointer shadow-xs"
+                    className={`tap-pill flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl font-semibold text-xs transition-colors cursor-pointer shadow-xs ${
+                      isQuotaReached
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                        : 'bg-[#0b57d0] hover:bg-[#0842a0] text-white'
+                    }`}
                   >
                     <Sparkles className="w-3.5 h-3.5 text-blue-200" />
-                    <span>Register with this Delegation</span>
+                    <span>{isQuotaReached ? 'Join Delegation Waitlist' : 'Register with Delegation'}</span>
                   </button>
                 </div>
               </div>
@@ -330,6 +450,13 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
           <ExternalLink className="w-3.5 h-3.5" />
         </button>
       </section>
+
+      {/* Share Modal showing the link and sharing it */}
+      <ShareChurchModal
+        isOpen={Boolean(sharingChurch)}
+        church={sharingChurch}
+        onClose={() => setSharingChurch(null)}
+      />
     </div>
   );
 };

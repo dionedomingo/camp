@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useRef, type FC, type ChangeEvent } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -11,10 +11,17 @@ import {
   Loader2, 
   Sparkles,
   Building,
-  Save
+  Save,
+  Upload,
+  Image as ImageIcon,
+  HardDrive,
+  Star,
+  AlertCircle,
+  CalendarCheck
 } from 'lucide-react';
 import type { CampEvent, EventScheduleItem } from '../types';
 import { apiService } from '../services/api';
+import { getRegistrationStatus, formatDateShort } from '../lib/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -28,6 +35,11 @@ export const AdminEventManager: FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [eventSaveMsg, setEventSaveMsg] = useState<string | null>(null);
+
+  // Event Primary Image upload state (Cloudflare R2)
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const primaryImageInputRef = useRef<HTMLInputElement | null>(null);
 
   // Edit / Add Schedule Session Dialog state
   const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
@@ -101,8 +113,53 @@ export const AdminEventManager: FC = () => {
     };
   }, []);
 
+  const applyLeadUpPreset = (daysBefore: number) => {
+    const eventStart = eventForm.start_date || '2027-07-21';
+    const startDateObj = new Date(eventStart);
+    if (isNaN(startDateObj.getTime())) return;
+
+    const cutoffDate = new Date(startDateObj.getTime() - daysBefore * 24 * 60 * 60 * 1000);
+    const cutoffStr = cutoffDate.toISOString().split('T')[0];
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    let regStart = eventForm.registration_start_date;
+    if (!regStart || regStart > cutoffStr) {
+      regStart = todayStr < cutoffStr ? todayStr : new Date(cutoffDate.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    }
+
+    setEventForm((prev) => ({
+      ...prev,
+      registration_start_date: regStart,
+      registration_end_date: cutoffStr,
+    }));
+  };
+
+  const handleOpenRegistrationToday = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const eventStart = eventForm.start_date || '2027-07-21';
+    const startDateObj = new Date(eventStart);
+    const cutoffDate = new Date(startDateObj.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const defaultCutoff = cutoffDate.toISOString().split('T')[0];
+
+    setEventForm((prev) => ({
+      ...prev,
+      registration_start_date: todayStr,
+      registration_end_date: prev.registration_end_date && prev.registration_end_date >= todayStr ? prev.registration_end_date : defaultCutoff,
+    }));
+  };
+
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (
+      eventForm.registration_start_date &&
+      eventForm.registration_end_date &&
+      eventForm.registration_start_date > eventForm.registration_end_date
+    ) {
+      setEventSaveMsg('Error: Registration open date cannot be later than registration cutoff date.');
+      return;
+    }
+
     setIsSavingEvent(true);
     setEventSaveMsg(null);
     try {
@@ -123,6 +180,61 @@ export const AdminEventManager: FC = () => {
       setEventSaveMsg(msg);
     } finally {
       setIsSavingEvent(false);
+    }
+  };
+
+  const handlePrimaryImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    setIsUploadingImage(true);
+    setImageUploadError(null);
+    try {
+      const res = await apiService.uploadMedia(file, {
+        folder: 'events',
+        eventId: event?.id || 'vlc-2027',
+        isPrimary: true,
+        title: `${eventForm.name || 'VLC 2027'} Primary Banner`,
+      });
+      if (res.success && res.url) {
+        setEventForm((prev) => ({
+          ...prev,
+          primary_image_url: res.url,
+          banner_url: res.url,
+        }));
+        setEvent((prev) => (prev ? { ...prev, primary_image_url: res.url, banner_url: res.url } : null));
+        setEventSaveMsg('Primary event image uploaded to Cloudflare R2 and saved!');
+        setTimeout(() => setEventSaveMsg(null), 3500);
+      } else {
+        setImageUploadError(res.error || 'Failed to upload primary image to Cloudflare R2');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error uploading image to R2';
+      setImageUploadError(msg);
+    } finally {
+      setIsUploadingImage(false);
+      if (primaryImageInputRef.current) primaryImageInputRef.current.value = '';
+    }
+  };
+
+  const handleRemovePrimaryImage = async () => {
+    if (!window.confirm('Remove primary image from this event?')) return;
+    setEventForm((prev) => ({
+      ...prev,
+      primary_image_url: '',
+      banner_url: '',
+    }));
+    try {
+      await apiService.updateEvent({
+        id: event?.id || 'vlc-2027',
+        primary_image_url: '',
+        banner_url: '',
+      });
+      setEvent((prev) => (prev ? { ...prev, primary_image_url: '', banner_url: '' } : null));
+      setEventSaveMsg('Primary image removed.');
+      setTimeout(() => setEventSaveMsg(null), 3000);
+    } catch {
+      // Ignore
     }
   };
 
@@ -212,20 +324,61 @@ export const AdminEventManager: FC = () => {
     .filter((s) => s.day_number === selectedDay)
     .sort((a, b) => (a.sort_order - b.sort_order) || a.time_start.localeCompare(b.time_start));
 
+  const regStatus = getRegistrationStatus(eventForm);
+  const regDateError =
+    eventForm.registration_start_date &&
+    eventForm.registration_end_date &&
+    eventForm.registration_start_date > eventForm.registration_end_date
+      ? 'Registration open date cannot be later than cutoff date.'
+      : null;
+  const regDateWarning =
+    eventForm.start_date &&
+    eventForm.registration_end_date &&
+    eventForm.registration_end_date > eventForm.start_date
+      ? 'Note: Registration cutoff extends past the event opening date. Registration typically closes leading up to the event.'
+      : null;
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Card: Event Entity Summary */}
-      <Card className="border border-blue-100 bg-gradient-to-r from-blue-900 via-indigo-900 to-zinc-900 text-white shadow-md">
-        <CardContent className="p-6">
+      <Card className="relative overflow-hidden border border-blue-100 bg-gradient-to-r from-blue-900 via-indigo-900 to-zinc-900 text-white shadow-md">
+        {/* Background Event Primary Image if available */}
+        {(eventForm.primary_image_url || eventForm.banner_url) && (
+          <>
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay transition-all"
+              style={{ backgroundImage: `url('${eventForm.primary_image_url || eventForm.banner_url}')` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-950/95 via-indigo-950/90 to-zinc-950/85" />
+          </>
+        )}
+        <CardContent className="relative z-10 p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge className="bg-blue-500 text-white font-mono text-[10px] tracking-wider uppercase">
                   Event Entity: vlc-2027
                 </Badge>
                 <Badge variant="outline" className="text-zinc-200 border-zinc-600 text-[10px]">
                   {event?.status?.toUpperCase() || 'ACTIVE'}
                 </Badge>
+                <Badge 
+                  className={`text-[10px] gap-1 font-semibold ${
+                    regStatus.status === 'open' 
+                      ? 'bg-emerald-500/90 text-white border-0' 
+                      : regStatus.status === 'upcoming' 
+                      ? 'bg-amber-500/90 text-white border-0' 
+                      : 'bg-red-500/90 text-white border-0'
+                  }`}
+                >
+                  <Clock className="w-2.5 h-2.5" />
+                  {regStatus.badgeText}
+                </Badge>
+                {(eventForm.primary_image_url || eventForm.banner_url) && (
+                  <Badge className="bg-orange-500/80 text-white border-0 text-[10px] gap-1">
+                    <Star className="w-2.5 h-2.5 fill-current" /> Primary Image Set
+                  </Badge>
+                )}
               </div>
               <h2 className="text-2xl font-bold tracking-tight">
                 {event?.name || 'Vision & Leadership Camp 2027'}
@@ -239,10 +392,16 @@ export const AdminEventManager: FC = () => {
               </p>
             </div>
 
-            <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-xs space-y-2 shrink-0 md:min-w-[240px]">
+            <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-xs space-y-2 shrink-0 md:min-w-[250px]">
               <div className="flex items-center gap-2 text-zinc-200">
                 <Calendar className="w-3.5 h-3.5 text-blue-300" />
-                <span>{event?.start_date || '2027-07-21'} &rarr; {event?.end_date || '2027-07-24'}</span>
+                <span>Camp: {event?.start_date || '2027-07-21'} &rarr; {event?.end_date || '2027-07-24'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-zinc-200">
+                <Clock className="w-3.5 h-3.5 text-blue-300" />
+                <span>
+                  Registration: {eventForm.registration_start_date ? `${formatDateShort(eventForm.registration_start_date)} &rarr; ${formatDateShort(eventForm.registration_end_date)}` : 'Lead-up window not set'}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-zinc-200">
                 <MapPin className="w-3.5 h-3.5 text-blue-300" />
@@ -269,11 +428,120 @@ export const AdminEventManager: FC = () => {
                 Event Metadata
               </CardTitle>
               <CardDescription>
-                Configure the primary event dates, venue location, and capacity.
+                Configure the primary event dates, venue location, capacity, and primary media.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSaveEvent} className="space-y-3.5 text-xs">
+                {/* Event Primary Image & Banner (Cloudflare R2) */}
+                <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/70 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-zinc-800 flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                      Event Primary Image &amp; Banner
+                    </label>
+                    {(eventForm.primary_image_url || eventForm.banner_url) && (
+                      <Badge className="bg-orange-100 text-orange-700 border border-orange-200 text-[10px] gap-1 py-0">
+                        <HardDrive className="w-2.5 h-2.5 text-orange-600" />
+                        {(eventForm.primary_image_url || '').includes('/api/media/') ? 'Cloudflare R2' : 'Custom'}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Image Preview & Upload Container */}
+                  {(eventForm.primary_image_url || eventForm.banner_url) ? (
+                    <div className="space-y-2">
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-zinc-200 bg-zinc-900 group">
+                        <img 
+                          src={eventForm.primary_image_url || eventForm.banner_url} 
+                          alt="Event primary preview"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => primaryImageInputRef.current?.click()}
+                            className="bg-white/90 hover:bg-white text-zinc-900 text-xs h-7 px-2.5 gap-1"
+                          >
+                            <Upload className="w-3 h-3" />
+                            Replace
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={handleRemovePrimaryImage}
+                            className="text-xs h-7 px-2.5 gap-1"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                        <span className="truncate max-w-[200px]" title={eventForm.primary_image_url || eventForm.banner_url}>
+                          {eventForm.primary_image_url || eventForm.banner_url}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => primaryImageInputRef.current?.click()}
+                          className="text-blue-600 hover:underline font-medium cursor-pointer"
+                        >
+                          Change Image
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => primaryImageInputRef.current?.click()}
+                      className="border border-dashed border-zinc-300 hover:border-blue-400 hover:bg-blue-50/40 rounded-xl p-4 text-center cursor-pointer transition-colors space-y-1.5"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
+                        {isUploadingImage ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-zinc-800">
+                        {isUploadingImage ? 'Uploading to Cloudflare R2...' : 'Upload Primary Image to R2'}
+                      </p>
+                      <p className="text-[10px] text-zinc-500">
+                        High-res hero image stored in <code className="bg-zinc-200/60 px-1 py-0.2 rounded font-mono">vlc2027-media</code>
+                      </p>
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    ref={primaryImageInputRef}
+                    onChange={handlePrimaryImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploadingImage}
+                  />
+
+                  {/* Manual URL Input */}
+                  <div className="pt-1">
+                    <Input
+                      type="text"
+                      placeholder="Or paste direct image URL (https://...)"
+                      value={eventForm.primary_image_url || eventForm.banner_url || ''}
+                      onChange={(e) => setEventForm({
+                        ...eventForm,
+                        primary_image_url: e.target.value,
+                        banner_url: e.target.value,
+                      })}
+                      className="h-8 text-[11px] bg-white"
+                    />
+                  </div>
+
+                  {imageUploadError && (
+                    <p className="text-red-600 text-[11px]">{imageUploadError}</p>
+                  )}
+                </div>
+
                 <div>
                   <label className="font-semibold text-zinc-700 block mb-1">Event Name</label>
                   <Input 
@@ -317,6 +585,128 @@ export const AdminEventManager: FC = () => {
                       required
                     />
                   </div>
+                </div>
+
+                {/* Registration Allowed Dates leading up to actual event */}
+                <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-zinc-900 flex items-center gap-1.5 text-xs">
+                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                      Registration Allowed Dates (Lead-up Window)
+                    </label>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                      regStatus.status === 'open'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : regStatus.status === 'upcoming'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : 'bg-red-100 text-red-800 border border-red-300'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        regStatus.status === 'open' ? 'bg-emerald-500' : regStatus.status === 'upcoming' ? 'bg-amber-500' : 'bg-red-500'
+                      }`} />
+                      {regStatus.badgeText}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-zinc-600 leading-tight">
+                    Set the dates when delegate registrations are permitted leading up to camp opening day ({formatDateShort(eventForm.start_date)}).
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-semibold text-zinc-700 block mb-1 text-[11px]">
+                        Allowed From (Open Date)
+                      </label>
+                      <Input
+                        type="date"
+                        value={eventForm.registration_start_date || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, registration_start_date: e.target.value })}
+                        className="h-8 text-xs bg-white"
+                      />
+                      <span className="text-[10px] text-zinc-500">When signups begin</span>
+                    </div>
+                    <div>
+                      <label className="font-semibold text-zinc-700 block mb-1 text-[11px]">
+                        Allowed Until (Cutoff Deadline)
+                      </label>
+                      <Input
+                        type="date"
+                        value={eventForm.registration_end_date || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, registration_end_date: e.target.value })}
+                        className="h-8 text-xs bg-white"
+                      />
+                      <span className="text-[10px] text-zinc-500">Cutoff leading up to camp</span>
+                    </div>
+                  </div>
+
+                  {/* Lead-up Presets */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">
+                      Lead-Up Presets (Relative to Event Start):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => applyLeadUpPreset(7)}
+                        className="text-[10px] px-2 py-1 bg-white hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 font-medium transition-colors cursor-pointer"
+                        title="Registration closes 7 days before camp begins"
+                      >
+                        Close 7 Days Before
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyLeadUpPreset(3)}
+                        className="text-[10px] px-2 py-1 bg-white hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 font-medium transition-colors cursor-pointer"
+                        title="Registration closes 3 days before camp begins"
+                      >
+                        Close 3 Days Before
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyLeadUpPreset(1)}
+                        className="text-[10px] px-2 py-1 bg-white hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 font-medium transition-colors cursor-pointer"
+                        title="Registration closes 1 day before camp begins"
+                      >
+                        Close 1 Day Before
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyLeadUpPreset(0)}
+                        className="text-[10px] px-2 py-1 bg-white hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 font-medium transition-colors cursor-pointer"
+                        title="Registration allowed until day of camp opening"
+                      >
+                        Close on Camp Day
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleOpenRegistrationToday}
+                        className="text-[10px] px-2 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-md text-emerald-800 font-medium transition-colors cursor-pointer"
+                        title="Set registration start date to today"
+                      >
+                        Open Today
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Alert Messages */}
+                  {regDateError && (
+                    <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-[11px] flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{regDateError}</span>
+                    </div>
+                  )}
+                  {regDateWarning && !regDateError && (
+                    <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{regDateWarning}</span>
+                    </div>
+                  )}
+                  {!regDateError && !regDateWarning && (
+                    <div className="text-[11px] text-zinc-600 bg-white/70 p-2 rounded-lg border border-blue-100 flex items-center gap-1.5">
+                      <CalendarCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>{regStatus.description}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>

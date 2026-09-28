@@ -1,8 +1,10 @@
 import { dispatchCamperPassportEmail } from './_email/dispatcher';
 import { EmailEnv } from './_email/types';
+import { saveSelfieToR2 } from './media/helper';
 
 interface Env extends EmailEnv {
   DB: D1Database;
+  MEDIA_BUCKET?: R2Bucket;
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -58,12 +60,57 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     // Fetch the target event info
     const event = await context.env.DB
-      .prepare('SELECT id, name, theme FROM events WHERE id = ?')
+      .prepare('SELECT id, name, theme, start_date, end_date, registration_start_date, registration_end_date, status FROM events WHERE id = ?')
       .bind(eventId)
-      .first<{ id: string; name: string; theme: string }>();
+      .first<{
+        id: string;
+        name: string;
+        theme: string;
+        start_date: string;
+        end_date: string;
+        registration_start_date?: string | null;
+        registration_end_date?: string | null;
+        status: string;
+      }>();
 
     const targetEventName = event?.name || 'Vision & Leadership Camp 2027';
     const targetEventTheme = event?.theme || 'Arise & Shine (Isaiah 60:1)';
+
+    // Verify registration allowed dates leading up to the actual event
+    if (event) {
+      const today = new Date().toISOString().split('T')[0];
+
+      if (event.status === 'completed' || event.status === 'archived') {
+        return new Response(
+          JSON.stringify({
+            error: `Registration for ${event.name} is closed as the event has concluded or is archived.`,
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (event.registration_start_date && today < event.registration_start_date) {
+        return new Response(
+          JSON.stringify({
+            error: `Registration for ${event.name} has not opened yet. Registration opens on ${event.registration_start_date} leading up to the event.`,
+            registration_status: 'upcoming',
+            registration_start_date: event.registration_start_date,
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (event.registration_end_date && today > event.registration_end_date) {
+        return new Response(
+          JSON.stringify({
+            error: `Registration for ${event.name} is closed. The registration cutoff deadline was ${event.registration_end_date} leading up to the event.`,
+            registration_status: 'closed',
+            registration_end_date: event.registration_end_date,
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Check if camper account already exists
     const existingCamper: any = await context.env.DB
@@ -141,6 +188,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         .run();
 
       // Update camper's current active event pointer
+      let existingSelfieUrl = existingCamper.selfie_url;
+      if (data.selfie_url && data.selfie_url.startsWith('data:')) {
+        const updatedSelfie = await saveSelfieToR2(context.env.MEDIA_BUCKET, data.selfie_url, existingCamper.id);
+        if (updatedSelfie) {
+          existingSelfieUrl = updatedSelfie;
+        }
+      }
+
       await context.env.DB
         .prepare(`
           UPDATE campers
@@ -149,6 +204,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
               activation_token = ?,
               church_id = ?,
               role = ?,
+              selfie_url = COALESCE(?, selfie_url),
               status = 'registered'
           WHERE id = ?
         `)
@@ -158,9 +214,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           activationToken,
           data.church_id || existingCamper.church_id,
           data.role || existingCamper.role || 'camper',
+          existingSelfieUrl,
           existingCamper.id
         )
         .run();
+
+      existingCamper.selfie_url = existingSelfieUrl;
 
       // Dispatch event passport email
       const requestOrigin = new URL(context.request.url).origin;
@@ -216,6 +275,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       );
     }
 
+    // Save camper selfie to Cloudflare R2 if provided as Base64/DataURL
+    const savedSelfieUrl = await saveSelfieToR2(
+      context.env.MEDIA_BUCKET,
+      data.selfie_url,
+      camperId
+    );
+
     // New Camper Account: Insert into campers table
     await context.env.DB
       .prepare(`
@@ -253,7 +319,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         ministryInterestsJson,
         data.favorite_verse || 'Philippians 4:13',
         data.verse_reflection || null,
-        data.selfie_url || null,
+        savedSelfieUrl,
         activationCode,
         activationToken,
         data.password.trim(),
@@ -336,6 +402,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         camper: {
           id: camperId,
           ...data,
+          selfie_url: savedSelfieUrl,
           event_id: eventId,
           activation_code: activationCode,
           activation_token: activationToken,

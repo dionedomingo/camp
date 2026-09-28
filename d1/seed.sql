@@ -70,4 +70,175 @@ INSERT OR IGNORE INTO campers (id, church_id, role, full_name, nickname, gender,
   'Isaiah 60:1',
   'Arise, shine, for your light has come, and the glory of the Lord rises upon you!',
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_105', 'ch_jia_buag', 'counselor', 'David Paul Villanueva', 'Dave', 'male', 23, '2003-05-18',
+  'david.villanueva@email.com', '+639174445566', 'Nueva Vizcaya', 'Bambang', 'L', 'None',
+  'Cynthia Villanueva', '+639178881122', 'Mother',
+  '["Youth Leadership", "Prayer & Intercession"]',
+  '1 Timothy 4:12',
+  'Don’t let anyone look down on you because you are young, but set an example for the believers.',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_106', 'ch_jia_buguey', 'first_timer', 'Sarah Joy Balisi', 'Sarah', 'female', 19, '2007-11-04',
+  'sarah.balisi@email.com', '+639185556677', 'Cagayan', 'Buguey', 'M', 'None',
+  'Antonio Balisi', '+639187779900', 'Father',
+  '["Children Ministry", "Media & Tech"]',
+  'Proverbs 3:5-6',
+  'Trust in the Lord with all your heart and lean not on your own understanding.',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_107', 'ch_cog_almaguer', 'worship', 'Grace Nicole Aquino', 'Grace', 'female', 22, '2004-08-25',
+  'grace.aquino@email.com', '+639201112244', 'Nueva Vizcaya', 'Bambang', 'S', 'None',
+  'Elena Aquino', '+639203334411', 'Mother',
+  '["Praise & Worship", "Acoustic Guitar"]',
+  'Psalm 46:1',
+  'God is our refuge and strength, an ever-present help in trouble.',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_108', 'ch_jia_amunitan', 'worship', 'Nathaniel Joseph Perez', 'Nathan', 'male', 21, '2005-06-14',
+  'nathan.perez@email.com', '+639173332211', 'Cagayan', 'Gonzaga', 'L', 'None',
+  'Marites Perez', '+639178883344', 'Mother',
+  '["Praise & Worship", "Bass Guitar"]',
+  'Psalm 150:6',
+  'Let everything that has breath praise the Lord!',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_109', 'ch_jia_ipil', 'first_timer', 'Faith Angela Cruz', 'Faith', 'female', 18, '2008-02-19',
+  'faith.cruz@email.com', '+639194445566', 'Cagayan', 'Gonzaga', 'M', 'None',
+  'Eduardo Cruz', '+639192223311', 'Father',
+  '["Creative Dance", "Children Ministry"]',
+  'Hebrews 11:1',
+  'Now faith is confidence in what we hope for and assurance about what we do not see.',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_110', 'ch_jia_tucalan', 'counselor', 'Mark Anthony Lopez', 'Mark', 'male', 24, '2002-10-08',
+  'mark.lopez@email.com', '+639186667788', 'Cagayan', 'Lasam', 'XL', 'None',
+  'Luzviminda Lopez', '+639184441122', 'Mother',
+  '["Youth Discipleship", "Camp Counseling"]',
+  'Philippians 4:13',
+  'I can do all things through Christ who gives me strength.',
+  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_111', 'ch_jia_nabannagan', 'camper', 'Caleb Joshua Dizon', 'Caleb', 'male', 20, '2006-07-22',
+  'caleb.dizon@email.com', '+639225556677', 'Cagayan', 'Lasam', 'M', 'None',
+  'Jonathan Dizon', '+639227778899', 'Father',
+  '["Media & Tech", "Logistics"]',
+  'Joshua 24:15',
+  'As for me and my household, we will serve the Lord.',
+  'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_112', 'ch_jia_new_orlins', 'camper', 'Kyla Mae Pascual', 'Kyla', 'female', 19, '2007-04-16',
+  'kyla.pascual@email.com', '+639178889900', 'Cagayan', 'Lasam', 'S', 'None',
+  'Virginia Pascual', '+639172221100', 'Mother',
+  '["Creative Arts", "Ushering"]',
+  'Psalm 23:1',
+  'The Lord is my shepherd, I lack nothing.',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_113', 'ch_jia_callao', 'worship', 'James Matthew Tan', 'James', 'male', 22, '2004-12-03',
+  'james.tan@email.com', '+639193337788', 'Cagayan', 'Lasam', 'L', 'None',
+  'Rebecca Tan', '+639194448899', 'Mother',
+  '["Praise & Worship", "Drums"]',
+  'Colossians 3:16',
+  'Sing psalms, hymns, and spiritual songs with gratitude in your hearts to God.',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_114', 'ch_jia_minanga', 'first_timer', 'Joy Abigail Perez', 'Joy', 'female', 18, '2008-08-30',
+  'joy.perez@email.com', '+639206665544', 'Cagayan', 'Lasam', 'M', 'None',
+  'Marlon Perez', '+639207771122', 'Father',
+  '["Youth Fellowship", "Hospitality"]',
+  'Nehemiah 8:10',
+  'The joy of the Lord is your strength!',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_115', 'ch_jia_ibj', 'staff', 'Gabriel Sean Ramos', 'Gabe', 'male', 25, '2001-09-12',
+  'gabe.ramos@email.com', '+639189991122', 'Cagayan', 'Lasam', 'L', 'None',
+  'Patricia Ramos', '+639185552233', 'Mother',
+  '["Camp Administration", "Safety & Security"]',
+  'Galatians 6:9',
+  'Let us not become weary in doing good, for at the proper time we will reap a harvest.',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_116', 'ch_jia_allannay', 'camper', 'Bea Louise Torres', 'Bea', 'female', 20, '2006-05-14',
+  'bea.torres@email.com', '+639234445566', 'Cagayan', 'Lasam', 'S', 'None',
+  'Danilo Torres', '+639238889900', 'Father',
+  '["Visual Arts", "Decoration"]',
+  'Psalm 139:14',
+  'I praise you because I am fearfully and wonderfully made.',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_117', 'ch_jia_sta_teresita', 'counselor', 'Timothy John Reyes', 'Timmy', 'male', 23, '2003-03-29',
+  'timmy.reyes@email.com', '+639177773322', 'Cagayan', 'Sta. Teresita', 'M', 'None',
+  'Corazon Reyes', '+639176664411', 'Mother',
+  '["Cabin Mentoring", "Youth Outreach"]',
+  '2 Timothy 1:7',
+  'For God has not given us a spirit of fear, but of power, love, and self-discipline.',
+  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_118', 'ch_jia_upacan', 'worship', 'Leah Marie Fernandez', 'Leah', 'female', 21, '2005-11-18',
+  'leah.fernandez@email.com', '+639198884433', 'Nueva Vizcaya', 'Bambang', 'S', 'None',
+  'Bernardo Fernandez', '+639191118877', 'Father',
+  '["Praise & Worship", "Violin / Strings"]',
+  'Psalm 91:1-2',
+  'Whoever dwells in the shelter of the Most High will rest in the shadow of the Almighty.',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_119', 'ch_jia_santo_domingo', 'camper', 'Lucas Aaron Diaz', 'Luke', 'male', 20, '2006-08-05',
+  'luke.diaz@email.com', '+639205559988', 'Nueva Vizcaya', 'Bambang', 'L', 'None',
+  'Teresa Diaz', '+639203332211', 'Mother',
+  '["Sports Ministry", "Media"]',
+  '1 Corinthians 9:24',
+  'Run in such a way as to get the prize.',
+  'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_120', 'ch_jia_gifta', 'first_timer', 'Rachel Ann Castro', 'Rachel', 'female', 18, '2008-01-12',
+  'rachel.castro@email.com', '+639171119933', 'Nueva Vizcaya', 'Bambang', 'M', 'None',
+  'Emilio Castro', '+639174447788', 'Father',
+  '["Creative Arts", "Children Ministry"]',
+  'Romans 8:28',
+  'In all things God works for the good of those who love him.',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_121', 'ch_jia_mauan', 'camper', 'Philip Andrew Gomez', 'Philip', 'male', 22, '2004-09-24',
+  'philip.gomez@email.com', '+639182226677', 'Nueva Vizcaya', 'Bambang', 'XL', 'None',
+  'Clarissa Gomez', '+639189993344', 'Mother',
+  '["Evangelism", "Ushering"]',
+  'Romans 1:16',
+  'For I am not ashamed of the gospel, because it is the power of God that brings salvation.',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_122', 'ch_jia_san_antonio', 'worship', 'Abigail Faye Morales', 'Abby', 'female', 20, '2006-02-14',
+  'abby.morales@email.com', '+639197771122', 'Nueva Vizcaya', 'Bambang', 'S', 'None',
+  'Vicente Morales', '+639198886655', 'Father',
+  '["Praise & Worship", "Keyboard"]',
+  'Psalm 63:1',
+  'You, God, are my God, earnestly I seek you; my whole being longs for you.',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'
+),
+(
+  'cmp_pcci_123', 'ch_jia_mangayang', 'staff', 'Daniel Keith Bautista', 'Dan', 'male', 26, '2000-12-07',
+  'dan.bautista@email.com', '+639208883344', 'Nueva Vizcaya', 'Dupax Del Norte', 'L', 'None',
+  'Lorena Bautista', '+639204447788', 'Mother',
+  '["Camp Coordination", "Youth Pastorate"]',
+  'Micah 6:8',
+  'To act justly and to love mercy and to walk humbly with your God.',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80'
 );

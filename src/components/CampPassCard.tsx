@@ -6,10 +6,12 @@ import {
   CheckCircle2,
   Copy,
   Check,
-  Sparkles
+  Sparkles,
+  Link2
 } from 'lucide-react';
 import type { CamperRegistration, CamperRole } from '../types';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
+import { Code128Barcode } from './ui/Code128Barcode';
 
 interface CampPassCardProps {
   camper: CamperRegistration;
@@ -21,6 +23,7 @@ interface CampPassCardProps {
 
 export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInviteFriend, onActivatePass }) => {
   const [isCopied, setIsCopied] = useState(false);
+  const [isUrlCopied, setIsUrlCopied] = useState(false);
 
   const roleStyles: Record<CamperRole, { label: string; badge: string }> = {
     admin: { label: 'CAMP ADMINISTRATOR', badge: 'bg-zinc-900 text-amber-400' },
@@ -141,34 +144,76 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
           )}
         </div>
 
-        {/* Pass Footer with Scannable QR Code */}
-        <div className="pt-3 border-t border-[#f1f3f4] flex items-center justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-[10px] font-mono text-[#747775] block uppercase tracking-wider">
-              Activation / Pass Code
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-base font-bold text-[#1f1f1f] tracking-wider">
-                {passCode}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                title="Copy Pass Code"
-                className="p-1 text-[#747775] hover:text-[#1f1f1f] rounded-md hover:bg-[#f1f3f4] transition-colors cursor-pointer"
-              >
-                {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
+        {/* Pass Footer with Scannable 1D Barcode & 2D QR Code */}
+        <div className="pt-3 border-t border-[#f1f3f4] space-y-3">
+          {/* 1D Scannable Linear Barcode for handheld laser scanners */}
+          <div className="p-2.5 bg-zinc-50 border border-zinc-200/90 rounded-2xl flex flex-col items-center justify-center">
+            <Code128Barcode
+              value={passCode}
+              height={36}
+              width="100%"
+              showText={false}
+              barColor="#1f1f1f"
+            />
+            <div className="flex items-center justify-between w-full px-2 pt-1 font-mono text-[10px] text-zinc-500">
+              <span className="uppercase tracking-wider">Pass Barcode:</span>
+              <strong className="text-zinc-900 tracking-widest">{passCode}</strong>
             </div>
-            <p className="text-[10px] text-[#747775] leading-tight">
-              {isActivated 
-                ? 'Pass verified! Use for meal claim & sessions.' 
-                : 'Scan at entrance or enter code to activate.'}
-            </p>
           </div>
 
-          <div className="p-2 bg-white border border-[#dadce0] rounded-2xl shrink-0 shadow-2xs">
-            <QRCodeCanvas value={qrUrl} size={84} />
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono text-[#747775] block uppercase tracking-wider">
+                Activation / Pass Code
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-base font-bold text-[#1f1f1f] tracking-wider">
+                  {passCode}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  title="Copy Pass Code"
+                  className="p-1 text-[#747775] hover:text-[#1f1f1f] rounded-md hover:bg-[#f1f3f4] transition-colors cursor-pointer"
+                >
+                  {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-[#747775] leading-tight">
+                {isActivated 
+                  ? 'Pass verified! Use for meal claim & sessions.' 
+                  : 'Scan at entrance or enter code to activate.'}
+              </p>
+
+              {/* Scannable Check-In URL Copy Action */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(qrUrl);
+                    setIsUrlCopied(true);
+                    setTimeout(() => setIsUrlCopied(false), 2000);
+                  }}
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                >
+                  {isUrlCopied ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span className="text-emerald-700">Scannable URL Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="w-3 h-3" />
+                      <span>Copy Scannable URL</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="p-2 bg-white border border-[#dadce0] rounded-2xl shrink-0 shadow-2xs">
+              <QRCodeCanvas value={qrUrl} size={84} />
+            </div>
           </div>
         </div>
 

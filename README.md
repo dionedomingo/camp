@@ -77,7 +77,7 @@ Try testing church invite links:
 
 ---
 
-## ☁️ Cloudflare Pages & D1 Deployment
+## ☁️ Cloudflare Pages, D1 & R2 Deployment
 
 ### 1. Create Remote D1 Database in Cloudflare
 ```bash
@@ -85,18 +85,32 @@ npx wrangler d1 create vlc2027-camp-db
 ```
 Copy the generated `database_id` into `wrangler.jsonc`.
 
-### 2. Apply Schema & Seed to Remote Cloudflare D1
+### 2. Create Cloudflare R2 Bucket for Media (Images & Videos)
 ```bash
-npx wrangler d1 execute vlc2027-camp-db --remote --file=./d1/schema.sql
-npx wrangler d1 execute vlc2027-camp-db --remote --file=./d1/seed.sql
+npx wrangler r2 bucket create vlc2027-media
+```
+Ensure `wrangler.jsonc` includes the `r2_buckets` binding:
+```jsonc
+"r2_buckets": [
+  {
+    "binding": "MEDIA_BUCKET",
+    "bucket_name": "vlc2027-media"
+  }
+]
 ```
 
-### 3. Set Gemini API Secret (Optional for enhanced reflections)
+### 3. Apply Schema & Seed to Remote Cloudflare D1
+```bash
+npx wrangler d1 execute vlc2027-camp-db --remote --file=./d1/schema.sql
+npx wrangler d1 execute vlc2027-camp-db --remote --file=./d1/0005_media_and_primary_image.sql
+```
+
+### 4. Set Gemini API Secret (Optional for enhanced reflections)
 ```bash
 npx wrangler pages secret put GEMINI_API_KEY
 ```
 
-### 4. Build & Deploy to Cloudflare Pages
+### 5. Build & Deploy to Cloudflare Pages
 ```bash
 npm run deploy
 ```
@@ -112,21 +126,28 @@ npm run deploy
 ├── functions/api/            # Cloudflare Pages Functions
 │   ├── agent.ts              # Hybrid AI (Cloudflare Workers AI + Gemini API)
 │   ├── churches.ts           # Church list & slug lookup with D1 counts
+│   ├── events/               # Event metadata & schedule endpoints
+│   ├── media/                # Cloudflare R2 media endpoints
+│   │   ├── [...path].ts      # Stream images & videos with HTTP range support
+│   │   ├── upload.ts         # Multipart/base64 upload to R2 bucket & D1 catalog
+│   │   └── index.ts          # List, delete, and set primary event image
 │   ├── invite.ts             # Referral tracking
 │   ├── signup.ts             # Camper registration endpoint into D1
 │   └── stats.ts              # Live summary metrics & geographic aggregations
 ├── src/
 │   ├── components/
+│   │   ├── AdminEventManager.tsx   # Event details & primary image uploader
+│   │   ├── AdminMediaManager.tsx   # Cloudflare R2 media vault & video player
 │   │   ├── AgenticSignup/
 │   │   │   └── AgenticSignupModal.tsx  # Interactive AI signup wizard
 │   │   ├── CampPassCard.tsx            # Digital lanyard badge with QR & selfie
 │   │   ├── ChurchDirectory.tsx         # Partner churches & unique invite links
 │   │   ├── Header.tsx                  # Header with countdown & active church pill
 │   │   ├── InviteFriendModal.tsx       # Post-signup viral referral CTA
-│   │   ├── LiveDashboard.tsx           # Real-time summary landing page
+│   │   ├── LiveDashboard.tsx           # Real-time summary & dynamic R2 hero banner
 │   │   └── SelfieCapture.tsx           # Webcam capture & photo uploader
 │   ├── services/
-│   │   └── api.ts                      # Full API client with reactive offline fallback
+│   │   └── api.ts                      # Full API client with R2 upload & media methods
 │   ├── types/
 │   │   └── index.ts                    # TypeScript definitions
 │   ├── App.tsx                         # Main view orchestrator & URL slug listener

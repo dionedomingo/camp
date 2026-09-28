@@ -9,6 +9,14 @@ export type CamperRole =
   | 'worship' 
   | 'medical';
 
+export interface ChurchSignupSummary {
+  id: string;
+  nickname: string;
+  full_name?: string;
+  role?: CamperRole;
+  selfie_url?: string;
+}
+
 export interface Church {
   id: string;
   slug: string;
@@ -19,6 +27,7 @@ export interface Church {
   contact_email?: string;
   target_quota: number;
   registered_count?: number;
+  signups?: ChurchSignupSummary[];
 }
 
 export interface CamperRegistration {
@@ -53,6 +62,10 @@ export interface CamperRegistration {
   checked_in_at?: string;
   checked_in_by?: string;
   kit_claimed?: boolean | number;
+  print_count?: number;
+  last_printed_at?: string;
+  last_printed_by?: string;
+  reprint_reason?: string;
   password?: string;
   password_hash?: string;
   is_active?: boolean | number;
@@ -178,7 +191,28 @@ export interface CampEvent {
   country?: string;
   target_capacity?: number;
   banner_url?: string;
+  primary_image_url?: string;
+  registration_start_date?: string | null;
+  registration_end_date?: string | null;
+  registration_status?: 'open' | 'upcoming' | 'closed';
+  is_registration_allowed?: boolean;
   status: 'active' | 'upcoming' | 'completed' | 'archived';
+  created_at?: string;
+}
+
+export interface MediaItem {
+  id: string;
+  r2_key: string;
+  url: string;
+  file_name: string;
+  file_type: string;
+  media_type: 'image' | 'video';
+  file_size: number;
+  event_id?: string;
+  title?: string;
+  description?: string;
+  is_primary?: boolean | number;
+  uploaded_by?: string;
   created_at?: string;
 }
 
@@ -220,6 +254,95 @@ export interface EventRegistration {
   checked_in_at?: string;
   checked_in_by?: string;
   kit_claimed: number | boolean;
+  print_count?: number;
+  last_printed_at?: string;
+  last_printed_by?: string;
+  reprint_reason?: string;
   created_at?: string;
+}
+
+export type BadgeThemePreset = 'gold' | 'emerald' | 'heritage' | 'monochrome' | 'sunset';
+export type BadgeOrientation = 'vertical' | 'horizontal';
+
+export interface BadgeThemeConfig {
+  preset: BadgeThemePreset;
+  orientation: BadgeOrientation;
+  primaryColor?: string;
+  accentColor?: string;
+  showPhoto: boolean;
+  showChurch: boolean;
+  showRole: boolean;
+  showVerse: boolean;
+  showBarcode: boolean;
+  showQrCode: boolean;
+  showEmergencyContact: boolean;
+  headerStyle: 'solid' | 'gradient' | 'minimal';
+}
+
+export const DEFAULT_BADGE_CONFIG: BadgeThemeConfig = {
+  preset: 'gold',
+  orientation: 'vertical',
+  showPhoto: true,
+  showChurch: true,
+  showRole: true,
+  showVerse: true,
+  showBarcode: true,
+  showQrCode: true,
+  showEmergencyContact: false,
+  headerStyle: 'gradient',
+};
+
+export interface QueueDelegate {
+  registration_id: string;
+  event_id: string;
+  event_name?: string;
+  event_slug?: string;
+  event_theme?: string;
+  event_dates?: string;
+  event_venue?: string;
+  event_city?: string;
+  camper_id: string;
+  full_name: string;
+  nickname: string;
+  gender: string;
+  age: number;
+  birthdate?: string;
+  email: string;
+  phone: string;
+  province: string;
+  city?: string;
+  dietary_needs?: string;
+  emergency_name: string;
+  emergency_phone: string;
+  emergency_relation: string;
+  favorite_verse: string;
+  verse_reflection?: string;
+  selfie_url?: string;
+  activation_code: string;
+  activation_token: string;
+  role: CamperRole;
+  status: string;
+  print_count: number;
+  last_printed_at?: string;
+  last_printed_by?: string;
+  reprint_reason?: string;
+  checked_in_at?: string;
+  kit_claimed: number | boolean;
+  church_id: string;
+  church_name?: string;
+  church_slug?: string;
+  created_at?: string;
+}
+
+export interface BadgeQueueResponse {
+  success: boolean;
+  stats: {
+    total_in_queue: number;
+    unprinted_count: number;
+    printed_count: number;
+    reprint_count: number;
+  };
+  delegates: QueueDelegate[];
+  error?: string;
 }
 

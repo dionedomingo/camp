@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, type ChangeEvent, type FC } from 'react';
-import { Camera, RefreshCw, Upload, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { Camera, RefreshCw, Upload, Check, AlertCircle, Sparkles, HardDrive, Loader2 } from 'lucide-react';
+import { apiService } from '../services/api';
 
 interface SelfieCaptureProps {
   currentPhoto?: string;
@@ -12,10 +13,13 @@ export const SelfieCapture: FC<SelfieCaptureProps> = ({
 }) => {
   const [prevCurrentPhoto, setPrevCurrentPhoto] = useState(currentPhoto);
   const [photo, setPhoto] = useState<string | null>(currentPhoto || null);
+  const [isUploadingToR2, setIsUploadingToR2] = useState(false);
+  const [isR2Stored, setIsR2Stored] = useState(Boolean(currentPhoto && currentPhoto.includes('/api/media/')));
 
   if (currentPhoto !== prevCurrentPhoto) {
     setPrevCurrentPhoto(currentPhoto);
     setPhoto(currentPhoto || null);
+    setIsR2Stored(Boolean(currentPhoto && currentPhoto.includes('/api/media/')));
   }
 
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -160,6 +164,28 @@ export const SelfieCapture: FC<SelfieCaptureProps> = ({
     setPhoto(dataUrl);
     onPhotoSelected(dataUrl);
     stopCamera();
+    uploadCapturedSelfieToR2(dataUrl);
+  };
+
+  const uploadCapturedSelfieToR2 = async (dataUrl: string) => {
+    setIsUploadingToR2(true);
+    try {
+      const res = await apiService.uploadMedia(dataUrl, {
+        folder: 'selfies',
+        fileName: `selfie_${Date.now()}.jpg`,
+      });
+      if (res.success && res.url) {
+        setPhoto(res.url);
+        onPhotoSelected(res.url);
+        setIsR2Stored(true);
+      } else {
+        onPhotoSelected(dataUrl);
+      }
+    } catch {
+      onPhotoSelected(dataUrl);
+    } finally {
+      setIsUploadingToR2(false);
+    }
   };
 
   const takeSnapshot = () => {
@@ -198,9 +224,11 @@ export const SelfieCapture: FC<SelfieCaptureProps> = ({
           const compressed = canvas.toDataURL('image/jpeg', 0.85);
           setPhoto(compressed);
           onPhotoSelected(compressed);
+          uploadCapturedSelfieToR2(compressed);
         } else {
           setPhoto(rawUrl);
           onPhotoSelected(rawUrl);
+          uploadCapturedSelfieToR2(rawUrl);
         }
         stopCamera();
       };
@@ -283,6 +311,23 @@ export const SelfieCapture: FC<SelfieCaptureProps> = ({
           </div>
         )}
       </div>
+
+      {/* R2 Storage Indicator */}
+      {photo && (
+        <div className="flex items-center justify-center gap-1.5 text-xs">
+          {isUploadingToR2 ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-medium animate-pulse">
+              <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+              <span>Syncing selfie to Cloudflare R2...</span>
+            </span>
+          ) : (isR2Stored || photo.includes('/api/media/')) ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-medium">
+              <HardDrive className="w-3 h-3 text-emerald-600" />
+              <span>Selfie Stored in Cloudflare R2</span>
+            </span>
+          ) : null}
+        </div>
+      )}
 
       {cameraError && (
         <div className="inline-flex items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs text-left max-w-sm mx-auto">

@@ -1,5 +1,8 @@
+import { saveSelfieToR2 } from '../media/helper';
+
 interface Env {
   DB: D1Database;
+  MEDIA_BUCKET?: R2Bucket;
 }
 
 function calculateAge(birthdate: string): number {
@@ -54,6 +57,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         camper.ministry_interests = [camper.ministry_interests];
       }
     }
+
+    // Sanitize sensitive credentials and tokens
+    delete camper.password_hash;
+    delete camper.reset_token;
+    delete camper.reset_token_expires_at;
+    delete camper.activation_token;
 
     return new Response(
       JSON.stringify({ success: true, camper }),
@@ -123,8 +132,10 @@ async function handleUpdate(context: EventContext<Env, any, any>): Promise<Respo
     const emergencyPhone = body.emergency_phone !== undefined ? body.emergency_phone : existing.emergency_phone;
     const emergencyRelation = body.emergency_relation !== undefined ? body.emergency_relation : existing.emergency_relation;
     const favoriteVerse = body.favorite_verse || existing.favorite_verse;
-    const verseReflection = body.verse_reflection !== undefined ? body.verse_reflection : existing.verse_reflection;
-    const selfieUrl = body.selfie_url !== undefined ? body.selfie_url : existing.selfie_url;
+    let selfieUrl = body.selfie_url !== undefined ? body.selfie_url : existing.selfie_url;
+    if (selfieUrl && typeof selfieUrl === 'string' && selfieUrl.startsWith('data:')) {
+      selfieUrl = await saveSelfieToR2(context.env.MEDIA_BUCKET, selfieUrl, existing.id);
+    }
 
     let ministryJson = existing.ministry_interests;
     if (body.ministry_interests) {

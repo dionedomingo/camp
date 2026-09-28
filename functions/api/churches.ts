@@ -25,10 +25,21 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         .bind((church as { id: string }).id)
         .first<{ registered_count: number }>();
 
+      const { results: churchCampers } = await context.env.DB
+        .prepare(`
+          SELECT id, church_id, full_name, nickname, role, selfie_url
+          FROM campers
+          WHERE church_id = ?
+          ORDER BY created_at ASC
+        `)
+        .bind((church as { id: string }).id)
+        .all();
+
       return new Response(
         JSON.stringify({
           ...church,
           registered_count: countResult?.registered_count || 0,
+          signups: (churchCampers as any[]) || [],
         }),
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -51,7 +62,35 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       `)
       .all();
 
-    return new Response(JSON.stringify(results), {
+    // Fetch all signups to populate church selfie avatars and badge names
+    const { results: allCampers } = await context.env.DB
+      .prepare(`
+        SELECT id, church_id, full_name, nickname, role, selfie_url
+        FROM campers
+        ORDER BY created_at ASC
+      `)
+      .all();
+
+    const signupsByChurch = new Map<string, Array<{ id: string; nickname: string; full_name?: string; role?: string; selfie_url?: string }>>();
+    for (const cmp of (allCampers as any[] || [])) {
+      if (!cmp.church_id) continue;
+      const list = signupsByChurch.get(cmp.church_id) || [];
+      list.push({
+        id: cmp.id,
+        nickname: cmp.nickname,
+        full_name: cmp.full_name,
+        role: cmp.role,
+        selfie_url: cmp.selfie_url,
+      });
+      signupsByChurch.set(cmp.church_id, list);
+    }
+
+    const churchesWithSignups = results.map((ch: any) => ({
+      ...ch,
+      signups: signupsByChurch.get(ch.id) || [],
+    }));
+
+    return new Response(JSON.stringify(churchesWithSignups), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {

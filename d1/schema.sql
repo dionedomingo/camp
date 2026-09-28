@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS events (
     target_capacity INTEGER DEFAULT 600,
     banner_url TEXT,
     primary_image_url TEXT,
+    registration_start_date DATE, -- Registration opening date leading up to the event
+    registration_end_date DATE,   -- Registration cutoff / deadline date leading up to the event
     status TEXT DEFAULT 'active', -- 'active', 'upcoming', 'completed', 'archived'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -87,6 +89,10 @@ CREATE TABLE IF NOT EXISTS campers (
     checked_in_at DATETIME,
     checked_in_by TEXT,
     kit_claimed INTEGER DEFAULT 0,
+    print_count INTEGER DEFAULT 0,
+    last_printed_at DATETIME,
+    last_printed_by TEXT,
+    reprint_reason TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_id) REFERENCES events(id),
     FOREIGN KEY (church_id) REFERENCES churches(id)
@@ -135,6 +141,10 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     checked_in_at DATETIME,
     checked_in_by TEXT,
     kit_claimed INTEGER DEFAULT 0,
+    print_count INTEGER DEFAULT 0,
+    last_printed_at DATETIME,
+    last_printed_by TEXT,
+    reprint_reason TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (camper_id) REFERENCES campers(id) ON DELETE CASCADE,
@@ -162,6 +172,8 @@ CREATE INDEX IF NOT EXISTS idx_event_reg_code ON event_registrations(activation_
 CREATE INDEX IF NOT EXISTS idx_email_deliveries_camper ON email_deliveries(camper_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_email_deliveries_key ON email_deliveries(idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_email_deliveries_status ON email_deliveries(status);
+CREATE INDEX IF NOT EXISTS idx_event_reg_print_count ON event_registrations(event_id, print_count);
+CREATE INDEX IF NOT EXISTS idx_campers_print_count ON campers(print_count);
 
 -- Media items table: Catalog of images and videos stored on Cloudflare R2
 CREATE TABLE IF NOT EXISTS media_items (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Header } from './components/Header';
+import { Header, type AppTab } from './components/Header';
+import { OfficialSchedulePage } from './components/OfficialSchedulePage';
 import { LiveDashboard } from './components/LiveDashboard';
 import { ChurchDirectory } from './components/ChurchDirectory';
 import { AdminPortal } from './components/AdminPortal';
@@ -9,15 +10,68 @@ import { InviteFriendModal } from './components/InviteFriendModal';
 import { CamperActivationModal } from './components/CamperActivationModal';
 import { CamperHubModal } from './components/CamperHubModal';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
+import { PublicCamperProfilePage } from './components/PublicCamperProfilePage';
 import { AdminLeftDrawer, type AdminTab } from './components/AdminLeftDrawer';
-import type { Church, RegistrationStats, CamperRegistration, AdminUser } from './types';
+import type { Church, RegistrationStats, CamperRegistration, AdminUser, CampEvent } from './types';
 import { apiService } from './services/api';
 
 export function App() {
   const [stats, setStats] = useState<RegistrationStats | null>(null);
+  const [activeEvent, setActiveEvent] = useState<CampEvent | null>(null);
   const [churches, setChurches] = useState<Church[]>([]);
   const [activeChurch, setActiveChurch] = useState<Church | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'churches' | 'admin'>('dashboard');
+  // Dedicated SPA routing supporting /join, /overview, /admin, /, and /camper/:id
+  const [activeTab, setActiveTab] = useState<AppTab>(() => {
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname.toLowerCase();
+      if (pathname.startsWith('/camper/')) {
+        return 'profile';
+      }
+      if (pathname === '/join' || pathname === '/join/' || pathname.startsWith('/join/') || pathname === '/churches') {
+        return 'churches';
+      }
+      if (pathname === '/overview' || pathname === '/dashboard') {
+        return 'dashboard';
+      }
+      if (pathname === '/admin') {
+        return 'admin';
+      }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('church')) {
+        return 'churches';
+      }
+      const isAdmin = sessionStorage.getItem('vlc_admin_authenticated') === 'true';
+      if (isAdmin && pathname === '/') return 'admin';
+    }
+    return 'schedule';
+  });
+
+  const navigateToTab = (tab: AppTab, options?: { churchSlug?: string; camperId?: string; replace?: boolean }) => {
+    setActiveTab(tab);
+    if (typeof window === 'undefined') return;
+
+    let targetPath = '/';
+    if (tab === 'churches') {
+      targetPath = options?.churchSlug ? `/join?church=${options.churchSlug}` : '/join';
+    } else if (tab === 'dashboard') {
+      targetPath = '/overview';
+    } else if (tab === 'admin') {
+      targetPath = '/admin';
+    } else if (tab === 'schedule') {
+      targetPath = '/';
+    } else if (tab === 'profile') {
+      targetPath = options?.camperId ? `/camper/${options.camperId}` : '/camper';
+    }
+
+    const currentPathWithSearch = window.location.pathname + window.location.search;
+    if (currentPathWithSearch !== targetPath) {
+      if (options?.replace) {
+        window.history.replaceState({ tab }, '', targetPath);
+      } else {
+        window.history.pushState({ tab }, '', targetPath);
+      }
+    }
+  };
 
   // Camper user state
   const [currentCamper, setCurrentCamper] = useState<CamperRegistration | null>(() => {
@@ -98,8 +152,47 @@ export function App() {
     return false;
   });
 
-  // Load initial stats & churches + handle URL parameters (church slug, activation token/code, reset token)
+  // Public Camper Profile Modal state (camper/:id or ?camper=:id)
+  const [selectedCamperProfileId, setSelectedCamperProfileId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      if (pathname.startsWith('/camper/')) {
+        const id = pathname.replace('/camper/', '').split('/')[0]?.split('?')[0];
+        if (id) return id;
+      }
+      const params = new URLSearchParams(window.location.search);
+      return params.get('camper') || null;
+    }
+    return null;
+  });
+
+  // Load initial stats & churches + handle URL parameters (church slug, activation token/code, reset token, camper profile)
   useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname.toLowerCase();
+      if (pathname.startsWith('/camper/')) {
+        const id = pathname.replace('/camper/', '').split('/')[0]?.split('?')[0];
+        setSelectedCamperProfileId(id || null);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        setSelectedCamperProfileId(params.get('camper') || null);
+      }
+
+      // Sync active tab with browser URL history
+      if (pathname.startsWith('/camper/')) {
+        setActiveTab('profile');
+      } else if (pathname === '/join' || pathname === '/join/' || pathname.startsWith('/join/') || pathname === '/churches') {
+        setActiveTab('churches');
+      } else if (pathname === '/overview' || pathname === '/dashboard') {
+        setActiveTab('dashboard');
+      } else if (pathname === '/admin') {
+        setActiveTab('admin');
+      } else if (pathname === '/' || pathname === '/schedule') {
+        setActiveTab('schedule');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+
     const initData = async () => {
       // 1. Fetch churches
       const churchList = await apiService.getChurches();
@@ -112,6 +205,7 @@ export function App() {
         const matched = churchList.find((c) => c.slug.toLowerCase() === churchSlug.toLowerCase());
         if (matched) {
           setActiveChurch(matched);
+          setActiveTab('churches');
         }
       }
 
@@ -135,23 +229,42 @@ export function App() {
         setIsResetPasswordOpen(true);
       }
 
-      // 3. Fetch live statistics
-      const liveStats = await apiService.getStats();
+      // 3. Fetch live statistics & active event info
+      const [liveStats, eventRes] = await Promise.all([
+        apiService.getStats(),
+        apiService.getEvents('vlc-2027'),
+      ]);
       setStats(liveStats);
+      if (eventRes.active_event) {
+        setActiveEvent(eventRes.active_event);
+      }
     };
 
     initData();
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
-  // Refresh live statistics when a new camper signs up
+  // Refresh live statistics and active event when updates happen
   const refreshStats = async () => {
-    const updated = await apiService.getStats();
+    const [updated, eventRes] = await Promise.all([
+      apiService.getStats(),
+      apiService.getEvents('vlc-2027'),
+    ]);
     setStats(updated);
+    if (eventRes.active_event) {
+      setActiveEvent(eventRes.active_event);
+    }
   };
 
-  const handleStartSignup = (church?: Church) => {
+  const handleStartSignup = (church?: Church, event?: CampEvent) => {
     if (church) {
       setActiveChurch(church);
+    }
+    if (event) {
+      setActiveEvent(event);
     }
     setIsSignupOpen(true);
   };
@@ -164,6 +277,30 @@ export function App() {
   const handleOpenInviteModal = (camper: CamperRegistration) => {
     setLastRegisteredCamper(camper);
     setIsInviteModalOpen(true);
+  };
+
+  // Public camper profile modal handlers (route /camper/:id)
+  const handleOpenCamperProfile = (camperId: string) => {
+    setSelectedCamperProfileId(camperId);
+    navigateToTab('profile', { camperId });
+  };
+
+  const handleCloseCamperProfile = () => {
+    setSelectedCamperProfileId(null);
+    navigateToTab('churches');
+  };
+
+  const handleJoinDelegationFromProfile = (churchId: string) => {
+    handleCloseCamperProfile();
+    const church = churches.find((c) => c.id === churchId);
+    if (church) {
+      setActiveChurch(church);
+      navigateToTab('churches', { churchSlug: church.slug });
+      handleStartSignup(church);
+    } else {
+      navigateToTab('churches');
+      handleStartSignup();
+    }
   };
 
   // Camper authentication & activation handlers
@@ -193,7 +330,7 @@ export function App() {
       setCurrentUser(adminUser);
       setIsAdminAuthenticated(true);
       setCurrentCamper(user);
-      setActiveTab('admin');
+      navigateToTab('admin');
     } else {
       setCurrentCamper(user);
       setIsAdminAuthenticated(false);
@@ -218,7 +355,7 @@ export function App() {
 
   const handleOpenAuth = () => {
     if (isAdminAuthenticated) {
-      setActiveTab((prev) => (prev === 'admin' ? 'dashboard' : 'admin'));
+      navigateToTab(activeTab === 'admin' ? 'schedule' : 'admin');
     } else if (currentCamper) {
       setIsCamperHubOpen(true);
     } else {
@@ -235,14 +372,14 @@ export function App() {
     setCurrentCamper(null);
     setIsAdminAuthenticated(false);
     setIsAdminDrawerOpen(false);
-    setActiveTab('dashboard');
+    navigateToTab('schedule'); // Return to non-admin homepage
   };
 
   return (
     <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
-      {/* Top Fixed Header with Only Logo and Sign-in Icon */}
+      {/* Top Fixed Header with Schedule, Overview, Churches, and Sign-in */}
       <Header
-        onLogoClick={() => setActiveTab('dashboard')}
+        onLogoClick={() => navigateToTab(isAdminAuthenticated ? 'admin' : 'schedule')}
         onSignInClick={handleOpenAuth}
         isAdminAuthenticated={isAdminAuthenticated}
         currentUser={currentUser}
@@ -250,25 +387,53 @@ export function App() {
         onCamperClick={() => setIsCamperHubOpen(true)}
         onActivateClick={() => setIsActivationOpen(true)}
         onOpenAdminDrawer={() => setIsAdminDrawerOpen(true)}
-        onNavigateToChurches={() => setActiveTab('churches')}
+        onNavigateToSchedule={() => navigateToTab('schedule')}
+        onNavigateToOverview={() => navigateToTab('dashboard')}
+        onNavigateToChurches={() => navigateToTab('churches')}
         activeTab={activeTab}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+        {/* Default Homepage for Non-Admin Users: Official Schedule & Upcoming Gatherings */}
+        {activeTab === 'schedule' && (
+          <OfficialSchedulePage
+            currentCamper={currentCamper}
+            activeChurch={activeChurch}
+            churches={churches}
+            stats={stats}
+            onStartSignup={(church, event) => handleStartSignup(church, event)}
+            onSelectChurch={(church) => {
+              setActiveChurch(church);
+              handleStartSignup(church);
+            }}
+            onNavigateToOverview={() => navigateToTab('dashboard')}
+            onNavigateToChurches={() => navigateToTab('churches')}
+            onOpenCamperHub={() => setIsCamperHubOpen(true)}
+            onOpenActivation={() => setIsActivationOpen(true)}
+            onViewCamperProfile={handleOpenCamperProfile}
+          />
+        )}
+
+        {/* Camp Overview & Keynote Speakers Page */}
         {activeTab === 'dashboard' && (
           <LiveDashboard
             stats={stats}
             activeChurch={activeChurch}
+            activeEvent={activeEvent}
+            churches={churches}
             onStartSignup={handleStartSignup}
             onSelectChurch={(church) => {
               setActiveChurch(church);
               handleStartSignup(church);
             }}
-            onNavigateToChurches={() => setActiveTab('churches')}
+            onNavigateToChurches={() => navigateToTab('churches')}
+            onNavigateToSchedule={() => navigateToTab('schedule')}
+            onViewCamperProfile={handleOpenCamperProfile}
           />
         )}
 
+        {/* Church Delegations Directory */}
         {activeTab === 'churches' && (
           <ChurchDirectory
             churches={churches}
@@ -279,10 +444,12 @@ export function App() {
               setActiveChurch(c);
               handleStartSignup(c);
             }}
-            onBackToHome={() => setActiveTab('dashboard')}
+            onBackToHome={() => navigateToTab('schedule')}
+            onViewCamperProfile={handleOpenCamperProfile}
           />
         )}
 
+        {/* Admin Portal */}
         {activeTab === 'admin' && (
           isAdminAuthenticated ? (
             <AdminPortal
@@ -295,11 +462,11 @@ export function App() {
                 refreshStats();
               }}
               onExitAdmin={handleExitAdmin}
-              onReturnToSite={() => setActiveTab('dashboard')}
+              onReturnToSite={() => navigateToTab('schedule')}
               activeAdminTab={activeAdminTab}
               onSelectAdminTab={(tab) => {
                 setActiveAdminTab(tab);
-                setActiveTab('admin');
+                navigateToTab('admin');
               }}
               onOpenDrawer={() => setIsAdminDrawerOpen(true)}
             />
@@ -320,14 +487,23 @@ export function App() {
                   Sign In (Alexius)
                 </button>
                 <button
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => navigateToTab('schedule')}
                   className="tap-pill px-5 py-2.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium cursor-pointer"
                 >
-                  Return to Overview
+                  Return to Schedule
                 </button>
               </div>
             </div>
           )
+        )}
+
+        {/* Public Camper Profile Page */}
+        {activeTab === 'profile' && (
+          <PublicCamperProfilePage
+            camperId={selectedCamperProfileId}
+            onBack={handleCloseCamperProfile}
+            onJoinDelegation={handleJoinDelegationFromProfile}
+          />
         )}
       </main>
 
@@ -413,6 +589,7 @@ export function App() {
         onSignOut={handleCamperSignOut}
         onInviteFriend={() => currentCamper && handleOpenInviteModal(currentCamper)}
         onProfileUpdated={handleProfileUpdated}
+        onNavigateToSchedule={() => setActiveTab('schedule')}
       />
 
       {/* Agentic Signup Modal Wizard */}
@@ -422,6 +599,7 @@ export function App() {
         onClose={() => setIsSignupOpen(false)}
         initialChurch={activeChurch}
         allChurches={churches}
+        activeEvent={activeEvent}
         onComplete={handleCamperRegistered}
         onOpenInviteModal={handleOpenInviteModal}
       />
@@ -449,7 +627,7 @@ export function App() {
           }}
           onReturnToSite={() => {
             setIsAdminDrawerOpen(false);
-            setActiveTab('dashboard');
+            setActiveTab('schedule');
           }}
           onSignOut={() => {
             setIsAdminDrawerOpen(false);
@@ -457,6 +635,7 @@ export function App() {
           }}
         />
       )}
+
     </div>
   );
 }

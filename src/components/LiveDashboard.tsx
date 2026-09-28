@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import { 
   Church as ChurchIcon, 
   ArrowRight,
@@ -7,25 +7,51 @@ import {
   MapPin,
   Clock,
   UserCheck,
+  HardDrive,
+  AlertCircle,
+  CalendarCheck,
 } from 'lucide-react';
-import type { Church, RegistrationStats } from '../types';
+import type { Church, RegistrationStats, CampEvent } from '../types';
+import { apiService } from '../services/api';
+import { getRegistrationStatus, formatDateReadable, formatDateShort, formatEventDateRange } from '../lib/utils';
 import { KeynoteSpeakers } from './KeynoteSpeakers';
+import { ChurchDirectory } from './ChurchDirectory';
 
 interface LiveDashboardProps {
   stats: RegistrationStats | null;
   activeChurch: Church | null;
+  activeEvent?: CampEvent | null;
+  churches?: Church[];
   onStartSignup: (church?: Church) => void;
   onSelectChurch: (church: Church) => void;
   onNavigateToChurches: () => void;
+  onNavigateToSchedule?: () => void;
+  onViewCamperProfile?: (camperId: string) => void;
 }
 
 export const LiveDashboard: FC<LiveDashboardProps> = ({
   stats,
   activeChurch,
+  activeEvent: propEvent,
+  churches = [],
   onStartSignup,
   onSelectChurch,
   onNavigateToChurches,
+  onNavigateToSchedule,
+  onViewCamperProfile,
 }) => {
+  const [fetchedEvent, setFetchedEvent] = useState<CampEvent | null>(null);
+  const event = propEvent || fetchedEvent;
+
+  useEffect(() => {
+    if (propEvent) return;
+    apiService.getEvents('vlc-2027').then((res) => {
+      if (res.active_event) {
+        setFetchedEvent(res.active_event);
+      }
+    }).catch(console.error);
+  }, [propEvent]);
+
   if (!stats) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -38,6 +64,22 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
   }
 
   const isIndependent = activeChurch?.id === 'ch_open_delegate';
+  const heroImageUrl = event?.primary_image_url || event?.banner_url || 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=2000&q=80';
+  const isR2Hosted = Boolean(event?.primary_image_url && event.primary_image_url.includes('/api/media/'));
+
+  const regInfo = getRegistrationStatus(event);
+
+  const eventDatesDisplay = formatEventDateRange(
+    event?.start_date || '2027-07-21',
+    event?.end_date || '2027-07-24'
+  );
+
+  const venueDisplay = `${event?.venue_name || 'Buag Campgrounds'}, ${event?.city || 'Bambang'}, ${event?.province || 'Nueva Vizcaya'}`;
+
+  // Days to camp opening
+  const today = new Date();
+  const campDate = new Date(event?.start_date || '2027-07-21');
+  const daysToCamp = Math.max(0, Math.ceil((campDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
   return (
     <div className="space-y-12 pb-20 max-w-5xl mx-auto">
@@ -51,7 +93,7 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-100 hover:scale-105"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=2000&q=80')`,
+            backgroundImage: `url('${heroImageUrl}')`,
           }}
         />
         {/* Dark cinematic gradient for perfect text contrast */}
@@ -66,8 +108,27 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
               PCCI National Summer Camp
             </span>
 
+            {/* Registration Status Pill */}
+            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md border ${
+              regInfo.status === 'open'
+                ? 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40'
+                : regInfo.status === 'upcoming'
+                ? 'bg-amber-500/25 text-amber-200 border-amber-400/40'
+                : 'bg-rose-500/25 text-rose-200 border-rose-400/40'
+            }`}>
+              <Clock className="w-3.5 h-3.5" />
+              <span>{regInfo.label}</span>
+            </span>
+
+            {isR2Hosted && (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-orange-500/25 backdrop-blur-md text-orange-200 text-xs font-medium border border-orange-400/40">
+                <HardDrive className="w-3 h-3 text-orange-300" />
+                Cloudflare R2 Media
+              </span>
+            )}
+
             {activeChurch && (
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md border ${
+              <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-medium backdrop-blur-md border ${
                 isIndependent
                   ? 'bg-amber-500/20 text-amber-200 border-amber-400/30'
                   : 'bg-blue-500/20 text-blue-200 border-blue-400/30'
@@ -84,40 +145,81 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
               Gathering Under the Open Sky
             </p>
             <h1 className="text-4xl sm:text-6xl font-normal tracking-tight text-white leading-tight">
-              VLC 2027: <span className="font-bold text-yellow-300">Arise &amp; Shine</span>
+              {event?.name ? (
+                <>
+                  {event.name.split(':')[0]}: <span className="font-bold text-yellow-300">{event.theme?.split('(')[0] || 'Arise & Shine'}</span>
+                </>
+              ) : (
+                <>
+                  VLC 2027: <span className="font-bold text-yellow-300">Arise &amp; Shine</span>
+                </>
+              )}
             </h1>
           </div>
 
           <p className="text-base sm:text-lg text-slate-200 max-w-2xl leading-relaxed font-light">
-            A week where hundreds of young people, leaders, and church delegations gather for unforgettable days filled with vibrant worship, authentic fellowship, and life-changing encounters. Step out of the ordinary, join your delegation or register as a guest delegate, and arise into your God-given calling.
+            {event?.description || 'A week where hundreds of young people, leaders, and church delegations gather for unforgettable days filled with vibrant worship, authentic fellowship, and life-changing encounters. Step out of the ordinary, join your delegation or register as a guest delegate, and arise into your God-given calling.'}
           </p>
 
-          {/* Quick Info Bar */}
+          {/* Quick Info Bar with Dynamic Event and Registration Allowed Dates */}
           <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-xs sm:text-sm text-slate-300 pt-1">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-yellow-300" />
-              July 15 &ndash; 19, 2027
+              {eventDatesDisplay}
             </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-yellow-300" />
-              Bambang, Nueva Vizcaya, Philippines
+              {venueDisplay}
             </span>
             <span className="flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-yellow-300" />
-              292 Days to Camp Opening
+              {daysToCamp > 0 ? `${daysToCamp} Days to Camp Opening` : 'Camp Opening!'}
             </span>
+            {event?.registration_end_date && (
+              <span className={`flex items-center gap-1.5 ${
+                regInfo.status === 'open' ? 'text-emerald-300 font-medium' : regInfo.status === 'upcoming' ? 'text-amber-300 font-medium' : 'text-rose-300 font-medium'
+              }`}>
+                <CalendarCheck className="w-4 h-4" />
+                {regInfo.status === 'open' 
+                  ? `Registration Allowed Until ${formatDateShort(event.registration_end_date)} (${regInfo.badgeText})`
+                  : regInfo.status === 'upcoming'
+                  ? `Registration Opens ${formatDateReadable(event.registration_start_date)}`
+                  : `Registration Closed on ${formatDateReadable(event.registration_end_date)}`
+                }
+              </span>
+            )}
           </div>
 
           {/* Google I/O Minimalist Call to Action Buttons */}
           <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <button
-              onClick={() => onStartSignup(activeChurch || undefined)}
-              className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-white hover:bg-slate-100 text-[#0b57d0] font-semibold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4 text-[#0b57d0]" />
-              <span>Register Now {activeChurch ? `(${activeChurch.name.split(' ')[0]})` : ''}</span>
-              <ArrowRight className="w-4 h-4 text-[#0b57d0]" />
-            </button>
+            {regInfo.isAllowed ? (
+              <button
+                onClick={() => onStartSignup(activeChurch || undefined)}
+                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-white hover:bg-slate-100 text-[#0b57d0] font-semibold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-[#0b57d0]" />
+                <span>Register Now {activeChurch ? `(${activeChurch.name.split(' ')[0]})` : ''}</span>
+                <ArrowRight className="w-4 h-4 text-[#0b57d0]" />
+              </button>
+            ) : regInfo.status === 'upcoming' ? (
+              <button
+                onClick={() => alert(`Registration for ${event?.name || 'VLC 2027'} officially opens on ${formatDateReadable(event?.registration_start_date)} leading up to the camp event.`)}
+                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-sm shadow-lg transition-all cursor-pointer"
+                title={`Registration opens on ${formatDateReadable(event?.registration_start_date)}`}
+              >
+                <Clock className="w-4 h-4 text-zinc-950" />
+                <span>Registration Opens {formatDateShort(event?.registration_start_date)}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => alert(`Registration for ${event?.name || 'VLC 2027'} closed on ${formatDateReadable(event?.registration_end_date)} leading up to the camp event.`)}
+                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-zinc-800/80 hover:bg-zinc-800 text-zinc-400 font-semibold text-sm border border-zinc-700 transition-all cursor-pointer"
+                title={`Registration closed on ${formatDateReadable(event?.registration_end_date)}`}
+              >
+                <AlertCircle className="w-4 h-4 text-zinc-400" />
+                <span>Registration Closed</span>
+              </button>
+            )}
 
             <a
               href="#speakers"
@@ -125,6 +227,16 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
             >
               Meet the Speakers ↓
             </a>
+
+            {onNavigateToSchedule && (
+              <button
+                onClick={onNavigateToSchedule}
+                className="tap-pill inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white font-medium text-sm border border-white/25 transition-all text-center cursor-pointer"
+              >
+                <Calendar className="w-4 h-4 text-yellow-300" />
+                <span>Official Schedule &amp; Gatherings</span>
+              </button>
+            )}
 
             <button
               onClick={onNavigateToChurches}
@@ -134,7 +246,7 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
               <span>Church Delegations &amp; Links</span>
             </button>
 
-            {!isIndependent && (
+            {!isIndependent && regInfo.isAllowed && (
               <button
                 onClick={() => {
                   const openChurch: Church = {
@@ -176,7 +288,14 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
             />
           </div>
           <p className="text-[11px] text-[#747775]">
-            {stats.targetCapacity - stats.totalRegistered} slots remaining before registration closes
+            {regInfo.isAllowed
+              ? event?.registration_end_date
+                ? `${stats.targetCapacity - stats.totalRegistered} slots remaining before registration closes on ${formatDateReadable(event.registration_end_date)}`
+                : `${stats.targetCapacity - stats.totalRegistered} slots remaining before registration closes`
+              : regInfo.status === 'upcoming'
+              ? `Registration opens on ${formatDateReadable(event?.registration_start_date)} (${stats.targetCapacity} total capacity)`
+              : `Registration closed on ${formatDateReadable(event?.registration_end_date)} leading up to camp`
+            }
           </p>
         </div>
 
@@ -212,76 +331,17 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
       {/* Keynote Speakers Section (Google I/O Style Layout) */}
       <KeynoteSpeakers />
 
-      {/* Independent Delegate Welcoming Banner */}
-      <section className="bg-gradient-to-r from-[#e8f0fe] via-white to-[#fef7e0] rounded-3xl p-6 sm:p-8 border border-[#d2e3fc] flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_1px_3px_rgba(60,64,67,0.06)]">
-        <div className="flex items-start sm:items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white text-[#0b57d0] flex items-center justify-center shadow-xs shrink-0">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <div className="space-y-1">
-            <div className="inline-block px-2.5 py-0.5 rounded-full bg-white text-[#0b57d0] text-[10px] font-bold uppercase tracking-wider shadow-xs mb-1">
-              Open Fellowship
-            </div>
-            <h3 className="font-bold text-base text-[#1f1f1f]">
-              Not affiliated with a listed PCCI church delegation?
-            </h3>
-            <p className="text-xs sm:text-sm text-[#5e5e5e] max-w-xl leading-relaxed">
-              Everyone is welcome at VLC 2027! Register as an Independent Delegate without requiring a church-specific invite link. We have accommodations and small groups ready for you.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => {
-            const openChurch: Church = {
-              id: 'ch_open_delegate',
-              slug: 'independent',
-              name: 'Independent Delegate / Other Fellowship',
-              province: 'Open / Other',
-              city: 'Various Cities',
-              target_quota: 100,
-            };
-            onSelectChurch(openChurch);
-            onStartSignup(openChurch);
-          }}
-          className="tap-pill shrink-0 whitespace-nowrap px-6 py-3 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white font-semibold text-xs shadow-sm hover:shadow transition-all cursor-pointer flex items-center gap-2"
-        >
-          <span>Join as Independent Delegate</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </section>
-
-      {/* Navigation Card to Church Delegations & Invite Links Page */}
-      <section className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20 rounded-3xl p-6 sm:p-8 border border-blue-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0b57d0] border border-blue-100 flex items-center justify-center shadow-2xs shrink-0">
-            <ChurchIcon className="w-6 h-6" />
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0b57d0] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
-                Delegations &amp; Quotas
-              </span>
-              <span className="text-xs font-semibold text-zinc-500">
-                {stats.churchBreakdown.length} Delegations Active
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">
-              Church Delegations &amp; Invite Links
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-600 max-w-xl leading-relaxed">
-              Find your home Jesus Is Alive Worship Center delegation across Cagayan and Nueva Vizcaya, view live registration quotas, or copy your delegation&apos;s unique invitation link to rally your youth.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={onNavigateToChurches}
-          className="tap-pill shrink-0 whitespace-nowrap px-6 py-3.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white font-semibold text-xs shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-2 self-stretch md:self-auto justify-center"
-        >
-          <span>Explore Church Delegations &amp; Links</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+      {/* Church Delegations Section on the Front */}
+      <section id="delegations" className="pt-2">
+        <ChurchDirectory
+          churches={churches || []}
+          stats={stats}
+          activeChurch={activeChurch}
+          onSelectChurch={onSelectChurch}
+          onStartSignup={onStartSignup}
+          onViewCamperProfile={onViewCamperProfile}
+          isEmbedded={true}
+        />
       </section>
     </div>
   );

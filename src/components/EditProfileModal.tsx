@@ -10,8 +10,13 @@ import {
   Save,
   CheckCircle2,
   AlertCircle,
-  Key
+  Key,
+  Link2,
+  Copy,
+  Check
 } from 'lucide-react';
+import { QRCodeCanvas } from './ui/QRCodeCanvas';
+import { Code128Barcode } from './ui/Code128Barcode';
 import {
   Dialog,
   DialogContent,
@@ -96,6 +101,8 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isBarcodeUrlCopied, setIsBarcodeUrlCopied] = useState(false);
+  const [isPassCodeCopied, setIsPassCodeCopied] = useState(false);
 
   if (camper.id !== prevCamperId) {
     setPrevCamperId(camper.id);
@@ -186,6 +193,102 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
           }}
         />
       </div>
+
+      {/* SECTION 2: OFFICIAL SCANNABLE PASS BARCODE & CHECK-IN LINK */}
+      {(() => {
+        const passCode = camper.activation_code || 'VLC-DELEGATE';
+        const checkInUrl = typeof window !== 'undefined'
+          ? `${window.location.origin}/?code=${encodeURIComponent(passCode)}`
+          : `https://summer-camp-vlc2027.pages.dev/?code=${encodeURIComponent(passCode)}`;
+
+        return (
+          <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#0b57d0]" />
+                <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wide">
+                  Official Scannable Barcode &amp; Pass
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white text-zinc-600 border border-zinc-200 font-bold">
+                1D Code 128 + 2D QR
+              </span>
+            </div>
+
+            {/* 1D Linear Barcode for scanners */}
+            <div className="p-2.5 bg-white border border-zinc-200/90 rounded-xl flex flex-col items-center justify-center shadow-2xs">
+              <Code128Barcode
+                value={passCode}
+                height={36}
+                width="100%"
+                showText={false}
+                barColor="#1f1f1f"
+              />
+              <div className="flex items-center justify-between w-full px-2 pt-1 font-mono text-[10px] text-zinc-500">
+                <span className="uppercase tracking-wider">Pass Barcode:</span>
+                <strong className="text-zinc-900 tracking-widest">{passCode}</strong>
+              </div>
+            </div>
+
+            {/* QR Code and Fast Check-In Link */}
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <div className="space-y-1 min-w-0 flex-1">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
+                  Activation / Pass Code
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-base font-bold text-zinc-900 tracking-wider">
+                    {passCode}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(passCode);
+                      setIsPassCodeCopied(true);
+                      setTimeout(() => setIsPassCodeCopied(false), 2000);
+                    }}
+                    title="Copy Pass Code"
+                    className="p-1 text-zinc-500 hover:text-zinc-900 rounded-md hover:bg-zinc-200/60 transition-colors cursor-pointer"
+                  >
+                    {isPassCodeCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-zinc-500 leading-tight">
+                  Scannable at entrance and session desks for instant badge check-in.
+                </p>
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(checkInUrl);
+                      setIsBarcodeUrlCopied(true);
+                      setTimeout(() => setIsBarcodeUrlCopied(false), 2000);
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                  >
+                    {isBarcodeUrlCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-emerald-700 font-bold">Check-In URL Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Link2 className="w-3.5 h-3.5" />
+                        <span>Copy Scannable URL</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-2 bg-white border border-zinc-200 rounded-2xl shrink-0 shadow-2xs">
+                <QRCodeCanvas value={checkInUrl} size={80} />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* SECTION 3: PERSONAL IDENTITY & BIRTHDAY */}
       <div className="space-y-4">
