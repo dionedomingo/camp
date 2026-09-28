@@ -11,6 +11,7 @@ import { CamperActivationModal } from './components/CamperActivationModal';
 import { CamperHubModal } from './components/CamperHubModal';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { PublicCamperProfilePage } from './components/PublicCamperProfilePage';
+import { CommunityFeed } from './components/CommunityFeed';
 import { AdminLeftDrawer, type AdminTab } from './components/AdminLeftDrawer';
 import type { Church, RegistrationStats, CamperRegistration, AdminUser, CampEvent } from './types';
 import { apiService } from './services/api';
@@ -26,6 +27,9 @@ export function App() {
       const pathname = window.location.pathname.toLowerCase();
       if (pathname.startsWith('/camper/')) {
         return 'profile';
+      }
+      if (pathname === '/feed' || pathname === '/community') {
+        return 'feed';
       }
       if (pathname === '/join' || pathname === '/join/' || pathname.startsWith('/join/') || pathname === '/churches') {
         return 'churches';
@@ -57,6 +61,8 @@ export function App() {
       targetPath = '/overview';
     } else if (tab === 'admin') {
       targetPath = '/admin';
+    } else if (tab === 'feed') {
+      targetPath = '/feed';
     } else if (tab === 'schedule') {
       targetPath = '/';
     } else if (tab === 'profile') {
@@ -390,6 +396,7 @@ export function App() {
         onNavigateToSchedule={() => navigateToTab('schedule')}
         onNavigateToOverview={() => navigateToTab('dashboard')}
         onNavigateToChurches={() => navigateToTab('churches')}
+        onNavigateToFeed={() => navigateToTab('feed')}
         activeTab={activeTab}
       />
 
@@ -503,6 +510,19 @@ export function App() {
             camperId={selectedCamperProfileId}
             onBack={handleCloseCamperProfile}
             onJoinDelegation={handleJoinDelegationFromProfile}
+            currentCamper={currentCamper}
+          />
+        )}
+
+        {/* Community Feed & Camper Media Hub */}
+        {activeTab === 'feed' && (
+          <CommunityFeed
+            currentCamper={currentCamper}
+            onNavigateToCamper={(camperId) => {
+              setSelectedCamperProfileId(camperId);
+              navigateToTab('profile', { camperId });
+            }}
+            onOpenLogin={() => setIsLoginOpen(true)}
           />
         )}
       </main>

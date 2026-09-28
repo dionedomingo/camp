@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { AdminUser, CamperRegistration } from '../types';
 
-export type AppTab = 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile';
+export type AppTab = 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed';
 
 interface HeaderProps {
   onLogoClick: () => void;
@@ -25,6 +25,7 @@ interface HeaderProps {
   onNavigateToSchedule?: () => void;
   onNavigateToOverview?: () => void;
   onNavigateToChurches?: () => void;
+  onNavigateToFeed?: () => void;
   activeTab: AppTab;
 }
 
@@ -40,6 +41,7 @@ export const Header: FC<HeaderProps> = ({
   onNavigateToSchedule,
   onNavigateToOverview,
   onNavigateToChurches,
+  onNavigateToFeed,
   activeTab,
 }) => {
   const avatarSelfie = currentUser?.selfie_url || currentCamper?.selfie_url;
@@ -80,6 +82,19 @@ export const Header: FC<HeaderProps> = ({
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 ml-2">
+            {onNavigateToFeed && (
+              <button
+                onClick={onNavigateToFeed}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${activeTab === 'feed'
+                  ? 'bg-blue-50 text-blue-700 font-semibold shadow-2xs'
+                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                  }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Community Feed</span>
+              </button>
+            )}
+
             {onNavigateToSchedule && (
               <button
                 onClick={onNavigateToSchedule}
@@ -212,6 +227,18 @@ export const Header: FC<HeaderProps> = ({
       {/* Mobile Sub-Navigation Bar for Non-Admin Views */}
       {!isAdminAuthenticated && (
         <div className="md:hidden flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-50 border-t border-zinc-200/60 overflow-x-auto scrollbar-none">
+          {onNavigateToFeed && (
+            <button
+              onClick={onNavigateToFeed}
+              className={`tap-pill px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1.5 ${activeTab === 'feed'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100'
+                }`}
+            >
+              <Sparkles className="w-3 h-3 text-amber-400" />
+              <span>Feed</span>
+            </button>
+          )}
           {onNavigateToSchedule && (
             <button
               onClick={onNavigateToSchedule}

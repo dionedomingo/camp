@@ -344,3 +344,79 @@ export interface BadgeQueueResponse {
   error?: string;
 }
 
+export type AllowedReactionEmoji = '👍' | '❤️' | '🔥' | '⛺' | '🌲' | '🎉';
+
+export interface ReactionCounts {
+  '👍': number;
+  '❤️': number;
+  '🔥': number;
+  '⛺': number;
+  '🌲': number;
+  '🎉': number;
+  total: number;
+  [key: string]: number;
+}
+
+export interface CommunityCamperSummary {
+  id: string;
+  full_name: string;
+  nickname: string;
+  role: string;
+  selfie_url?: string | null;
+  church_name?: string | null;
+}
+
+export interface CommunityPost {
+  id: string;
+  camper_id: string;
+  media_url: string;
+  caption?: string;
+  created_at: string;
+  updated_at: string;
+  camper: CommunityCamperSummary;
+  reaction_counts: ReactionCounts;
+  user_reaction: AllowedReactionEmoji | null;
+  comments_count: number;
+}
+
+export interface CommunityStory {
+  id: string;
+  camper_id: string;
+  media_url: string;
+  caption?: string | null;
+  created_at: string;
+  updated_at: string;
+  camper: CommunityCamperSummary;
+  reaction_counts: ReactionCounts;
+  user_reaction: AllowedReactionEmoji | null;
+}
+
+export interface CamperStoryGroup {
+  camper: CommunityCamperSummary;
+  latest_story_at: string;
+  stories: CommunityStory[];
+}
+
+export interface PostComment {
+  id: string;
+  post_id: string;
+  camper_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  camper: CommunityCamperSummary;
+  reaction_counts: ReactionCounts;
+  user_reaction: AllowedReactionEmoji | null;
+}
+
+export interface PresignUploadResult {
+  success: boolean;
+  upload_url: string;
+  key: string;
+  media_url: string;
+  file_type: string;
+  file_size: number;
+  expires_in: number;
+  error?: string;
+}
+

@@ -1,4 +1,23 @@
-import type { CamperRegistration, CamperRole, Church, RegistrationStats, AdminUser, CheckInStats, CampEvent, EventScheduleItem, EventRegistration, MediaItem, BadgeQueueResponse, QueueDelegate } from '../types';
+import type { 
+  CamperRegistration, 
+  CamperRole, 
+  Church, 
+  RegistrationStats, 
+  AdminUser, 
+  CheckInStats, 
+  CampEvent, 
+  EventScheduleItem, 
+  EventRegistration, 
+  MediaItem, 
+  BadgeQueueResponse, 
+  QueueDelegate,
+  CommunityPost,
+  CommunityStory,
+  CamperStoryGroup,
+  PostComment,
+  AllowedReactionEmoji,
+  PresignUploadResult
+} from '../types';
 
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
@@ -2411,6 +2430,382 @@ class CampApiService {
       return { success: false, error: data.error || 'Failed to set event primary image' };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Network error setting primary image';
+      return { success: false, error: msg };
+    }
+  }
+
+  // ==========================================
+  // Community Feed & Camper Media Methods
+  // ==========================================
+
+  /**
+   * Request pre-signed R2 upload URL for a post or story image
+   */
+  async presignMediaUpload(params: {
+    camper_id: string;
+    file_name?: string;
+    file_type: string;
+    file_size: number;
+    type?: 'post' | 'story';
+  }): Promise<PresignUploadResult> {
+    try {
+      const res = await fetch('/api/media/presign-upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': params.camper_id,
+        },
+        body: JSON.stringify(params),
+      });
+      const data = await res.json() as PresignUploadResult;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to request upload signature';
+      return {
+        success: false,
+        upload_url: '',
+        key: '',
+        media_url: '',
+        file_type: params.file_type,
+        file_size: params.file_size,
+        expires_in: 0,
+        error: msg,
+      };
+    }
+  }
+
+  /**
+   * Upload binary directly to Cloudflare R2 via pre-signed PUT URL
+   */
+  async uploadDirectToPresignedUrl(
+    uploadUrl: string,
+    file: File | Blob,
+    mimeType: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': mimeType,
+        },
+        body: file,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        return { success: false, error: `Upload to storage failed (${res.status}): ${text}` };
+      }
+      return { success: true };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to stream media to storage';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Commit a newly uploaded post record
+   */
+  async createPost(params: {
+    camper_id: string;
+    media_url: string;
+    caption?: string;
+  }): Promise<{ success: boolean; post?: CommunityPost; error?: string }> {
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': params.camper_id,
+        },
+        body: JSON.stringify(params),
+      });
+      const data = await res.json() as { success: boolean; post?: CommunityPost; error?: string };
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create post';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Get paginated posts for a specific camper
+   */
+  async getCampersPosts(
+    camperId: string,
+    page: number = 1,
+    limit: number = 12,
+    viewerId?: string
+  ): Promise<{
+    success: boolean;
+    posts?: CommunityPost[];
+    camper?: any;
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (viewerId) params.set('viewer_id', viewerId);
+
+      const headers: Record<string, string> = {};
+      if (viewerId) headers['x-camper-id'] = viewerId;
+
+      const res = await fetch(`/api/campers/${camperId}/posts?${params.toString()}`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch camper posts';
+      return { success: false, posts: [], error: msg };
+    }
+  }
+
+  /**
+   * Commit a newly uploaded permanent vertical story record
+   */
+  async createStory(params: {
+    camper_id: string;
+    media_url: string;
+    caption?: string;
+  }): Promise<{ success: boolean; story?: CommunityStory; error?: string }> {
+    try {
+      const res = await fetch('/api/stories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': params.camper_id,
+        },
+        body: JSON.stringify(params),
+      });
+      const data = await res.json() as { success: boolean; story?: CommunityStory; error?: string };
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to post story';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Get chronological permanent stories for a camper
+   */
+  async getCampersStories(
+    camperId: string,
+    viewerId?: string
+  ): Promise<{
+    success: boolean;
+    stories?: CommunityStory[];
+    camper?: any;
+    count?: number;
+    error?: string;
+  }> {
+    try {
+      const headers: Record<string, string> = {};
+      if (viewerId) headers['x-camper-id'] = viewerId;
+
+      const res = await fetch(`/api/campers/${camperId}/stories`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch stories';
+      return { success: false, stories: [], error: msg };
+    }
+  }
+
+  /**
+   * Get comments for a post
+   */
+  async getPostComments(
+    postId: string,
+    viewerId?: string
+  ): Promise<{ success: boolean; comments?: PostComment[]; count?: number; error?: string }> {
+    try {
+      const headers: Record<string, string> = {};
+      if (viewerId) headers['x-camper-id'] = viewerId;
+
+      const res = await fetch(`/api/posts/${postId}/comments`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch post comments';
+      return { success: false, comments: [], error: msg };
+    }
+  }
+
+  /**
+   * Add a comment to a post
+   */
+  async addPostComment(
+    postId: string,
+    camperId: string,
+    body: string
+  ): Promise<{ success: boolean; comment?: PostComment; error?: string }> {
+    try {
+      const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': camperId,
+        },
+        body: JSON.stringify({ camper_id: camperId, body }),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to add comment';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Add or toggle allowed emoji reaction on post, story, or comment
+   */
+  async toggleReaction(
+    reactableType: 'post' | 'story' | 'comment',
+    id: string,
+    reactionType: AllowedReactionEmoji,
+    camperId: string
+  ): Promise<{
+    success: boolean;
+    action?: 'added' | 'updated' | 'removed';
+    user_reaction?: AllowedReactionEmoji | null;
+    reaction_counts?: any;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch(`/api/${reactableType}/${id}/reactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': camperId,
+        },
+        body: JSON.stringify({ camper_id: camperId, reaction_type: reactionType }),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update reaction';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Remove reaction from an entity
+   */
+  async deleteReaction(
+    reactableType: 'post' | 'story' | 'comment',
+    id: string,
+    camperId: string
+  ): Promise<{
+    success: boolean;
+    action?: string;
+    user_reaction?: null;
+    reaction_counts?: any;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch(`/api/${reactableType}/${id}/reactions`, {
+        method: 'DELETE',
+        headers: {
+          'x-camper-id': camperId,
+        },
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to remove reaction';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Fetch the Community Feed (posts + camper story highlights)
+   */
+  async getCommunityFeed(
+    page: number = 1,
+    limit: number = 20,
+    viewerId?: string
+  ): Promise<{
+    success: boolean;
+    posts?: CommunityPost[];
+    camper_stories?: CamperStoryGroup[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (viewerId) params.set('viewer_id', viewerId);
+
+      const headers: Record<string, string> = {};
+      if (viewerId) headers['x-camper-id'] = viewerId;
+
+      const res = await fetch(`/api/feed?${params.toString()}`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch community feed';
+      return { success: false, posts: [], camper_stories: [], error: msg };
+    }
+  }
+
+  /**
+   * Get all active camper stories
+   */
+  async getAllStories(viewerId?: string): Promise<{
+    success: boolean;
+    camper_stories?: CamperStoryGroup[];
+    total_stories?: number;
+    error?: string;
+  }> {
+    try {
+      const headers: Record<string, string> = {};
+      if (viewerId) headers['x-camper-id'] = viewerId;
+
+      const res = await fetch('/api/stories', { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch stories';
+      return { success: false, camper_stories: [], error: msg };
+    }
+  }
+
+  /**
+   * Delete a post
+   */
+  async deletePost(postId: string, camperId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-camper-id': camperId,
+        },
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete post';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Delete a story
+   */
+  async deleteStory(storyId: string, camperId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/stories/${storyId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-camper-id': camperId,
+        },
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete story';
       return { success: false, error: msg };
     }
   }

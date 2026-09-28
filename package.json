@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "dev:all": "npm run build && (npm run cf:functions & cf_pid=$!; trap 'kill $cf_pid 2>/dev/null' EXIT INT TERM; npm run dev)",
+    "cf:dev": "npx wrangler pages dev dist",
+    "cf:functions": "npx wrangler pages dev dist --port 8788",
     "pages:dev": "wrangler pages dev ./dist",
     "d1:init": "wrangler d1 execute vlc2027-camp-db --local --file=./d1/schema.sql && wrangler d1 execute vlc2027-camp-db --local --file=./d1/seed.sql",
     "deploy": "npm run build && wrangler pages deploy ./dist"

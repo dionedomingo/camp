@@ -15,7 +15,9 @@ import {
   UserCheck,
   Layers,
   PlusCircle,
-  ArrowRight
+  ArrowRight,
+  Image as ImageIcon,
+  MessageCircle
 } from 'lucide-react';
 import {
   Dialog,
@@ -26,11 +28,21 @@ import {
 } from './ui/dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import type { CamperRegistration, EventScheduleItem, EventRegistration, CampEvent } from '../types';
+import type { 
+  CamperRegistration, 
+  EventScheduleItem, 
+  EventRegistration, 
+  CampEvent,
+  CommunityPost,
+  CommunityStory
+} from '../types';
 import { CampPassCard } from './CampPassCard';
 import { getRegistrationStatus, formatDateReadable, formatEventDateRange } from '../lib/utils';
 import { EditProfileForm } from './EditProfileModal';
 import { apiService } from '../services/api';
+import { MediaUploadModal } from './media/MediaUploadModal';
+import { StoryViewerModal } from './media/StoryViewerModal';
+import { PostDetailModal } from './media/PostDetailModal';
 
 interface CamperHubModalProps {
   isOpen: boolean;
@@ -51,12 +63,38 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
   onProfileUpdated,
   onNavigateToSchedule,
 }) => {
-  const [activeTab, setActiveTab] = useState<'pass' | 'events' | 'schedule' | 'profile' | 'details'>('pass');
+  const [activeTab, setActiveTab] = useState<'pass' | 'events' | 'schedule' | 'profile' | 'media' | 'details'>('pass');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailStatusMsg, setEmailStatusMsg] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<EventScheduleItem[]>([]);
   const [selectedDay, setSelectedDay] = useState<number>(1);
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
+
+  // Camper Media State
+  const [mediaPosts, setMediaPosts] = useState<CommunityPost[]>([]);
+  const [mediaStories, setMediaStories] = useState<CommunityStory[]>([]);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  const [isMediaUploadOpen, setIsMediaUploadOpen] = useState(false);
+  const [mediaUploadType, setMediaUploadType] = useState<'post' | 'story'>('post');
+  const [hubStoryIndex, setHubStoryIndex] = useState<number | null>(null);
+  const [hubSelectedPost, setHubSelectedPost] = useState<CommunityPost | null>(null);
+
+  const loadCamperMedia = async () => {
+    if (!camper?.id) return;
+    setIsLoadingMedia(true);
+    try {
+      const [postsRes, storiesRes] = await Promise.all([
+        apiService.getCampersPosts(camper.id, 1, 30, camper.id),
+        apiService.getCampersStories(camper.id, camper.id),
+      ]);
+      if (postsRes.success && postsRes.posts) setMediaPosts(postsRes.posts);
+      if (storiesRes.success && storiesRes.stories) setMediaStories(storiesRes.stories);
+    } catch (err) {
+      console.error('Failed to load camper media:', err);
+    } finally {
+      setIsLoadingMedia(false);
+    }
+  };
 
   // Multi-Event State
   const [registrations, setRegistrations] = useState<EventRegistration[]>(camper?.registrations || []);
@@ -268,6 +306,18 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
             >
               <UserCog className="w-3.5 h-3.5 text-[#0b57d0]" />
               <span>Edit Profile</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('media');
+                loadCamperMedia();
+              }}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${activeTab === 'media' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+              <span>My Media</span>
             </button>
             <button
               type="button"
@@ -853,6 +903,201 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Tab: My Media & Highlights */}
+        {activeTab === 'media' && (
+          <div className="space-y-5 pt-1 text-left animate-fadeIn">
+            {/* Top Media Action Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-blue-50 via-zinc-50 to-amber-50/50 p-4 rounded-3xl border border-zinc-200/80">
+              <div>
+                <h4 className="font-extrabold text-sm text-zinc-900 flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-blue-600" />
+                  <span>My Media &amp; Highlights</span>
+                </h4>
+                <p className="text-[11px] text-zinc-500">
+                  Posts and stories persist permanently on your profile and appear in the community feed.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaUploadType('post');
+                    setIsMediaUploadOpen(true);
+                  }}
+                  className="tap-pill px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Upload Post</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaUploadType('story');
+                    setIsMediaUploadOpen(true);
+                  }}
+                  className="tap-pill px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Add Highlight</span>
+                </button>
+              </div>
+            </div>
+
+            {isLoadingMedia ? (
+              <div className="py-16 flex flex-col items-center justify-center text-zinc-400 space-y-2">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <span className="text-xs">Loading your media...</span>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* 1. Permanent Highlights Row */}
+                <div className="bg-white rounded-3xl p-4 border border-zinc-200/90 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Permanent Highlights ({mediaStories.length})</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-semibold">
+                      Chronological order &bull; Never expires
+                    </span>
+                  </div>
+
+                  {mediaStories.length === 0 ? (
+                    <p className="text-xs text-zinc-400 italic py-3 text-center">
+                      No story highlights yet. Click 'Add Highlight' to share a vertical highlight reel!
+                    </p>
+                  ) : (
+                    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+                      {mediaStories.map((story, idx) => (
+                        <button
+                          key={story.id}
+                          type="button"
+                          onClick={() => setHubStoryIndex(idx)}
+                          className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+                        >
+                          <div className="w-16 h-22 rounded-2xl overflow-hidden p-0.5 bg-gradient-to-tr from-amber-400 via-orange-400 to-rose-400 shadow-2xs group-hover:shadow-md transition-all">
+                            <div className="w-full h-full rounded-[14px] overflow-hidden bg-black relative">
+                              <img
+                                src={story.media_url}
+                                alt={story.caption || 'Highlight'}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                              {story.reaction_counts && story.reaction_counts.total > 0 && (
+                                <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-[9px] text-white font-bold flex items-center gap-0.5">
+                                  <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+                                  <span>{story.reaction_counts.total}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-zinc-600 font-semibold max-w-[64px] truncate">
+                            {story.caption || `Highlight ${idx + 1}`}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Permanent Posts Grid */}
+                <div className="bg-white rounded-3xl p-4 border border-zinc-200/90 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Your Feed Posts ({mediaPosts.length})</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-semibold">
+                      Permanent camper profile feed
+                    </span>
+                  </div>
+
+                  {mediaPosts.length === 0 ? (
+                    <p className="text-xs text-zinc-400 italic py-6 text-center">
+                      You haven't posted any photos yet. Click 'Upload Post' to share your camp experiences!
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {mediaPosts.map((post) => (
+                        <div
+                          key={post.id}
+                          onClick={() => setHubSelectedPost(post)}
+                          className="relative aspect-square rounded-2xl overflow-hidden bg-zinc-950 cursor-pointer group shadow-2xs hover:shadow-md transition-all border border-zinc-200"
+                        >
+                          <img
+                            src={post.media_url}
+                            alt={post.caption || 'Post'}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 text-white font-bold text-xs p-2">
+                            <div className="flex items-center gap-1">
+                              <Sparkles className="w-4 h-4 text-amber-300" />
+                              <span>{post.reaction_counts?.total || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MessageCircle className="w-4 h-4 text-white" />
+                              <span>{post.comments_count || 0}</span>
+                            </div>
+                          </div>
+
+                          {post.caption && (
+                            <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/80 to-transparent">
+                              <p className="text-[10px] text-white truncate px-1">
+                                {post.caption}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Media Upload Modal */}
+            <MediaUploadModal
+              isOpen={isMediaUploadOpen}
+              onClose={() => setIsMediaUploadOpen(false)}
+              currentCamper={camper}
+              defaultType={mediaUploadType}
+              onPostCreated={(newPost) => setMediaPosts((prev) => [newPost, ...prev])}
+              onStoryCreated={(newStory) => setMediaStories((prev) => [...prev, newStory])}
+            />
+
+            {/* Story Viewer Modal */}
+            {hubStoryIndex !== null && mediaStories.length > 0 && (
+              <StoryViewerModal
+                isOpen={hubStoryIndex !== null}
+                onClose={() => setHubStoryIndex(null)}
+                stories={mediaStories}
+                initialIndex={hubStoryIndex}
+                currentCamper={camper}
+                onStoryDeleted={(id) => setMediaStories((prev) => prev.filter((s) => s.id !== id))}
+              />
+            )}
+
+            {/* Post Detail Modal */}
+            {hubSelectedPost && (
+              <PostDetailModal
+                isOpen={Boolean(hubSelectedPost)}
+                onClose={() => setHubSelectedPost(null)}
+                post={hubSelectedPost}
+                currentCamper={camper}
+                onPostDeleted={(id) => setMediaPosts((prev) => prev.filter((p) => p.id !== id))}
+                onReactionUpdated={(id, emoji, counts) =>
+                  setMediaPosts((prev) =>
+                    prev.map((p) =>
+                      p.id === id ? { ...p, user_reaction: emoji, reaction_counts: counts } : p
+                    )
+                  )
+                }
+              />
+            )}
           </div>
         )}
 
