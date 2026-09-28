@@ -1,16 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "summer-camp-vlc2027",
+  "name": "camp",
   "pages_build_output_dir": "./dist",
   "compatibility_date": "2024-09-23",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "vlc2027-camp-db",
       "database_id": "cd00a717-775d-4803-9424-94345383ea93"
     }
-
   ],
   "r2_buckets": [
     {
