@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "summer-camp-vlc2027",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vlc2027-camp-db",
+      "database_id": "cd00a717-775d-4803-9424-94345383ea93"
+    }
+
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "vlc2027-media"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "services": [
+    {
+      "binding": "EMAIL_SERVICE",
+      "service": "vlc-email-service"
+    }
+  ],
+  "vars": {
+    "CAMP_NAME": "VLC 2027",
+    "CAMP_THEME": "Arise & Shine (Isaiah 60:1)",
+    "TARGET_CAPACITY": "600",
+    "EMAIL_FROM": "VLC 2027 Camp Desk <noreply@filipino.dk>",
+    "BASE_URL": "https://summer-camp-vlc2027.pages.dev"
+  }
+}

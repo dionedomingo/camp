@@ -1,0 +1,464 @@
+import { useState, useEffect } from 'react';
+import { Header } from './components/Header';
+import { LiveDashboard } from './components/LiveDashboard';
+import { ChurchDirectory } from './components/ChurchDirectory';
+import { AdminPortal } from './components/AdminPortal';
+import { UnifiedLoginModal } from './components/UnifiedLoginModal';
+import { AgenticSignupModal } from './components/AgenticSignup/AgenticSignupModal';
+import { InviteFriendModal } from './components/InviteFriendModal';
+import { CamperActivationModal } from './components/CamperActivationModal';
+import { CamperHubModal } from './components/CamperHubModal';
+import { ResetPasswordModal } from './components/ResetPasswordModal';
+import { AdminLeftDrawer, type AdminTab } from './components/AdminLeftDrawer';
+import type { Church, RegistrationStats, CamperRegistration, AdminUser } from './types';
+import { apiService } from './services/api';
+
+export function App() {
+  const [stats, setStats] = useState<RegistrationStats | null>(null);
+  const [churches, setChurches] = useState<Church[]>([]);
+  const [activeChurch, setActiveChurch] = useState<Church | null>(null);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'churches' | 'admin'>('dashboard');
+
+  // Camper user state
+  const [currentCamper, setCurrentCamper] = useState<CamperRegistration | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const raw = sessionStorage.getItem('vlc_camper_user');
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  const [isCamperHubOpen, setIsCamperHubOpen] = useState(false);
+
+  // Camper On-Arrival Activation Modal state
+  const [isActivationOpen, setIsActivationOpen] = useState(false);
+  const [activationCode, setActivationCode] = useState('');
+  const [activationToken, setActivationToken] = useState('');
+
+  // Unified authentication state
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && sessionStorage.getItem('vlc_admin_authenticated') === 'true';
+  });
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const raw = sessionStorage.getItem('vlc_admin_user');
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+    if (sessionStorage.getItem('vlc_admin_authenticated') === 'true') {
+      return {
+        id: 'usr_admin_alexius',
+        name: 'Alexius',
+        email: 'alexius@pcci.ph',
+        role: 'admin',
+        is_active: 1,
+      };
+    }
+    return null;
+  });
+
+  // Admin Drawer & Tab state
+  const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false);
+  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('arrival');
+
+  // Modals state
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [lastRegisteredCamper, setLastRegisteredCamper] = useState<CamperRegistration | null>(null);
+  const [resetPasswordToken, setResetPasswordToken] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return (
+        params.get('reset_token') ||
+        params.get('resetToken') ||
+        (!params.get('activate_token') && !params.get('code') && !params.get('activate') ? params.get('token') : null) ||
+        null
+      );
+    }
+    return null;
+  });
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return Boolean(
+        params.get('reset_token') ||
+        params.get('resetToken') ||
+        (!params.get('activate_token') && !params.get('code') && !params.get('activate') && params.get('token'))
+      );
+    }
+    return false;
+  });
+
+  // Load initial stats & churches + handle URL parameters (church slug, activation token/code, reset token)
+  useEffect(() => {
+    const initData = async () => {
+      // 1. Fetch churches
+      const churchList = await apiService.getChurches();
+      setChurches(churchList);
+
+      // 2. Check URL search params for church invite link or arrival activation
+      const params = new URLSearchParams(window.location.search);
+      const churchSlug = params.get('church');
+      if (churchSlug) {
+        const matched = churchList.find((c) => c.slug.toLowerCase() === churchSlug.toLowerCase());
+        if (matched) {
+          setActiveChurch(matched);
+        }
+      }
+
+      // Check for on-arrival QR code activation in URL
+      const hasResetTokenParam = Boolean(params.get('reset_token') || params.get('resetToken'));
+      const tokenParam = params.get('activate_token') || (!hasResetTokenParam ? params.get('token') : null);
+      const codeParam = params.get('code') || params.get('activate');
+      if (tokenParam || codeParam) {
+        if (tokenParam && !hasResetTokenParam) setActivationToken(tokenParam);
+        if (codeParam) setActivationCode(codeParam);
+        if (tokenParam || codeParam) setIsActivationOpen(true);
+      }
+
+      // Check for password reset token in URL (?reset_token=... or ?resetToken=... or ?token=...)
+      const resetTokenParam =
+        params.get('reset_token') ||
+        params.get('resetToken') ||
+        (!codeParam && !params.get('activate_token') ? params.get('token') : null);
+      if (resetTokenParam) {
+        setResetPasswordToken(resetTokenParam);
+        setIsResetPasswordOpen(true);
+      }
+
+      // 3. Fetch live statistics
+      const liveStats = await apiService.getStats();
+      setStats(liveStats);
+    };
+
+    initData();
+  }, []);
+
+  // Refresh live statistics when a new camper signs up
+  const refreshStats = async () => {
+    const updated = await apiService.getStats();
+    setStats(updated);
+  };
+
+  const handleStartSignup = (church?: Church) => {
+    if (church) {
+      setActiveChurch(church);
+    }
+    setIsSignupOpen(true);
+  };
+
+  const handleCamperRegistered = (newCamper: CamperRegistration) => {
+    setLastRegisteredCamper(newCamper);
+    refreshStats();
+  };
+
+  const handleOpenInviteModal = (camper: CamperRegistration) => {
+    setLastRegisteredCamper(camper);
+    setIsInviteModalOpen(true);
+  };
+
+  // Camper authentication & activation handlers
+  const handleCamperActivationSuccess = (camper: CamperRegistration) => {
+    setCurrentCamper(camper);
+    setIsActivationOpen(false);
+    setIsCamperHubOpen(true);
+    refreshStats();
+  };
+
+  const handleLoginSuccess = (user: CamperRegistration) => {
+    const isAdminOrStaff = user.role === 'admin' || user.role === 'staff' || user.role === 'coordinator' || Boolean(user.is_admin);
+
+    if (isAdminOrStaff) {
+      const adminUser: AdminUser = {
+        id: user.id || 'usr_admin',
+        name: user.full_name || user.nickname,
+        nickname: user.nickname,
+        email: user.email,
+        role: user.role,
+        church_id: user.church_id,
+        church_name: user.church_name,
+        selfie_url: user.selfie_url,
+        is_active: user.is_active ?? 1,
+        last_login_at: user.last_login_at || new Date().toISOString(),
+      };
+      setCurrentUser(adminUser);
+      setIsAdminAuthenticated(true);
+      setCurrentCamper(user);
+      setActiveTab('admin');
+    } else {
+      setCurrentCamper(user);
+      setIsAdminAuthenticated(false);
+      setCurrentUser(null);
+      setIsCamperHubOpen(true);
+    }
+    setIsLoginOpen(false);
+  };
+
+  const handleCamperSignOut = () => {
+    sessionStorage.removeItem('vlc_camper_user');
+    sessionStorage.removeItem('vlc_user');
+    setCurrentCamper(null);
+    setIsCamperHubOpen(false);
+  };
+
+  const handleProfileUpdated = (updated: CamperRegistration) => {
+    setCurrentCamper(updated);
+    sessionStorage.setItem('vlc_camper_user', JSON.stringify(updated));
+    refreshStats();
+  };
+
+  const handleOpenAuth = () => {
+    if (isAdminAuthenticated) {
+      setActiveTab((prev) => (prev === 'admin' ? 'dashboard' : 'admin'));
+    } else if (currentCamper) {
+      setIsCamperHubOpen(true);
+    } else {
+      setIsLoginOpen(true);
+    }
+  };
+
+  const handleExitAdmin = () => {
+    sessionStorage.removeItem('vlc_admin_authenticated');
+    sessionStorage.removeItem('vlc_admin_user');
+    sessionStorage.removeItem('vlc_camper_user');
+    sessionStorage.removeItem('vlc_user');
+    setCurrentUser(null);
+    setCurrentCamper(null);
+    setIsAdminAuthenticated(false);
+    setIsAdminDrawerOpen(false);
+    setActiveTab('dashboard');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
+      {/* Top Fixed Header with Only Logo and Sign-in Icon */}
+      <Header
+        onLogoClick={() => setActiveTab('dashboard')}
+        onSignInClick={handleOpenAuth}
+        isAdminAuthenticated={isAdminAuthenticated}
+        currentUser={currentUser}
+        currentCamper={currentCamper}
+        onCamperClick={() => setIsCamperHubOpen(true)}
+        onActivateClick={() => setIsActivationOpen(true)}
+        onOpenAdminDrawer={() => setIsAdminDrawerOpen(true)}
+        onNavigateToChurches={() => setActiveTab('churches')}
+        activeTab={activeTab}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+        {activeTab === 'dashboard' && (
+          <LiveDashboard
+            stats={stats}
+            activeChurch={activeChurch}
+            onStartSignup={handleStartSignup}
+            onSelectChurch={(church) => {
+              setActiveChurch(church);
+              handleStartSignup(church);
+            }}
+            onNavigateToChurches={() => setActiveTab('churches')}
+          />
+        )}
+
+        {activeTab === 'churches' && (
+          <ChurchDirectory
+            churches={churches}
+            stats={stats}
+            activeChurch={activeChurch}
+            onSelectChurch={(c) => setActiveChurch(c)}
+            onStartSignup={(c) => {
+              setActiveChurch(c);
+              handleStartSignup(c);
+            }}
+            onBackToHome={() => setActiveTab('dashboard')}
+          />
+        )}
+
+        {activeTab === 'admin' && (
+          isAdminAuthenticated ? (
+            <AdminPortal
+              currentUser={currentUser}
+              churches={churches}
+              stats={stats}
+              onChurchesUpdated={async () => {
+                const updatedList = await apiService.getChurches();
+                setChurches(updatedList);
+                refreshStats();
+              }}
+              onExitAdmin={handleExitAdmin}
+              onReturnToSite={() => setActiveTab('dashboard')}
+              activeAdminTab={activeAdminTab}
+              onSelectAdminTab={(tab) => {
+                setActiveAdminTab(tab);
+                setActiveTab('admin');
+              }}
+              onOpenDrawer={() => setIsAdminDrawerOpen(true)}
+            />
+          ) : (
+            <div className="bg-white rounded-3xl p-10 sm:p-14 text-center border border-zinc-200 shadow-sm max-w-md mx-auto my-12 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-900 flex items-center justify-center mx-auto text-xl shadow-xs">
+                🔒
+              </div>
+              <h2 className="text-xl font-bold text-zinc-900">Admin Access Required</h2>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Management portal is restricted to authorized personnel. Please sign in with your administrator account (Alexius) to proceed.
+              </p>
+              <div className="pt-2 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setIsLoginOpen(true)}
+                  className="tap-pill px-6 py-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                >
+                  Sign In (Alexius)
+                </button>
+                <button
+                  onClick={() => setActiveTab('dashboard')}
+                  className="tap-pill px-5 py-2.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium cursor-pointer"
+                >
+                  Return to Overview
+                </button>
+              </div>
+            </div>
+          )
+        )}
+      </main>
+
+      {/* Clean Minimalist Footer */}
+      <footer className="border-t border-zinc-200/80 bg-white py-8 px-4 text-center text-xs text-zinc-500 space-y-2">
+        <p>
+          <strong className="text-zinc-900">VLC 2027</strong> &bull; Vision &amp; Leadership Camp &bull; <em>&ldquo;Arise &amp; Shine&rdquo; (Isaiah 60:1)</em>
+        </p>
+        <p>
+          Organized by Pentecostal Christian Church Incorporated (PCCI) &bull; National Office: Bambang, Nueva Vizcaya
+        </p>
+        <div className="pt-2 flex items-center justify-center gap-3 text-[11px] text-zinc-400">
+          <span>Powered by Cloudflare Pages &amp; D1 SQLite</span>
+          <span>&bull;</span>
+          <span>Theme: &ldquo;Arise &amp; Shine&rdquo; (Isaiah 60:1)</span>
+        </div>
+      </footer>
+
+      {/* Unified Single Login Modal (for both Campers and Admins) */}
+      <UnifiedLoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
+        onOpenActivation={() => setIsActivationOpen(true)}
+        onOpenSignup={() => handleStartSignup()}
+        onForgotPassword={() => {
+          setIsLoginOpen(false);
+          setResetPasswordToken(null);
+          setIsResetPasswordOpen(true);
+        }}
+      />
+
+      {/* Password Reset Modal */}
+      <ResetPasswordModal
+        key={resetPasswordToken || (isResetPasswordOpen ? 'open' : 'closed')}
+        isOpen={isResetPasswordOpen}
+        onClose={() => {
+          setIsResetPasswordOpen(false);
+          setResetPasswordToken(null);
+          // Clean reset_token / resetToken / token query parameter from URL cleanly
+          if (typeof window !== 'undefined' && window.location.search) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('reset_token');
+            url.searchParams.delete('resetToken');
+            if (!url.searchParams.has('code') && !url.searchParams.has('activate_token')) {
+              url.searchParams.delete('token');
+            }
+            window.history.replaceState({}, document.title, url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+          }
+        }}
+        onBackToLogin={() => {
+          setIsResetPasswordOpen(false);
+          setResetPasswordToken(null);
+          if (typeof window !== 'undefined' && window.location.search) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('reset_token');
+            url.searchParams.delete('resetToken');
+            if (!url.searchParams.has('code') && !url.searchParams.has('activate_token')) {
+              url.searchParams.delete('token');
+            }
+            window.history.replaceState({}, document.title, url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+          }
+          setIsLoginOpen(true);
+        }}
+        initialToken={resetPasswordToken}
+      />
+
+      {/* Camper On-Arrival Activation Modal */}
+      <CamperActivationModal
+        key={`${activationCode}_${activationToken}_${isActivationOpen}`}
+        isOpen={isActivationOpen}
+        onClose={() => setIsActivationOpen(false)}
+        initialCode={activationCode}
+        initialToken={activationToken}
+        onSuccess={handleCamperActivationSuccess}
+      />
+
+      {/* Camper Hub / Portal Modal */}
+      <CamperHubModal
+        isOpen={isCamperHubOpen}
+        onClose={() => setIsCamperHubOpen(false)}
+        camper={currentCamper}
+        onSignOut={handleCamperSignOut}
+        onInviteFriend={() => currentCamper && handleOpenInviteModal(currentCamper)}
+        onProfileUpdated={handleProfileUpdated}
+      />
+
+      {/* Agentic Signup Modal Wizard */}
+      <AgenticSignupModal
+        key={activeChurch?.id || 'general'}
+        isOpen={isSignupOpen}
+        onClose={() => setIsSignupOpen(false)}
+        initialChurch={activeChurch}
+        allChurches={churches}
+        onComplete={handleCamperRegistered}
+        onOpenInviteModal={handleOpenInviteModal}
+      />
+
+      {/* Post-Signup Viral Friend Invite Modal */}
+      {lastRegisteredCamper && (
+        <InviteFriendModal
+          isOpen={isInviteModalOpen}
+          onClose={() => setIsInviteModalOpen(false)}
+          camper={lastRegisteredCamper}
+        />
+      )}
+
+      {/* Admin Navigation Left Drawer - Accessible only by users with admin roles */}
+      {isAdminAuthenticated && (
+        <AdminLeftDrawer
+          isOpen={isAdminDrawerOpen}
+          onClose={() => setIsAdminDrawerOpen(false)}
+          currentUser={currentUser}
+          activeTab={activeAdminTab}
+          onSelectTab={(tab) => {
+            setActiveAdminTab(tab);
+            setActiveTab('admin');
+            setIsAdminDrawerOpen(false);
+          }}
+          onReturnToSite={() => {
+            setIsAdminDrawerOpen(false);
+            setActiveTab('dashboard');
+          }}
+          onSignOut={() => {
+            setIsAdminDrawerOpen(false);
+            handleExitAdmin();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;

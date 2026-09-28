@@ -1,0 +1,205 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/admin/auth",
+      "mountPath": "/api/admin",
+      "method": "POST",
+      "module": [
+        "api/admin/auth.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/admin/checkin",
+      "mountPath": "/api/admin",
+      "method": "GET",
+      "module": [
+        "api/admin/checkin.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/admin/checkin",
+      "mountPath": "/api/admin",
+      "method": "POST",
+      "module": [
+        "api/admin/checkin.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/admin/checkin-stats",
+      "mountPath": "/api/admin",
+      "method": "GET",
+      "module": [
+        "api/admin/checkin-stats.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/admin/email-deliveries",
+      "mountPath": "/api/admin",
+      "method": "GET",
+      "module": [
+        "api/admin/email-deliveries.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/admin/users",
+      "mountPath": "/api/admin",
+      "method": "DELETE",
+      "module": [
+        "api/admin/users.ts:onRequestDelete"
+      ]
+    },
+    {
+      "routePath": "/api/admin/users",
+      "mountPath": "/api/admin",
+      "method": "GET",
+      "module": [
+        "api/admin/users.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/admin/users",
+      "mountPath": "/api/admin",
+      "method": "POST",
+      "module": [
+        "api/admin/users.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/admin/users",
+      "mountPath": "/api/admin",
+      "method": "PUT",
+      "module": [
+        "api/admin/users.ts:onRequestPut"
+      ]
+    },
+    {
+      "routePath": "/api/auth/login",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/login.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/camper/activate",
+      "mountPath": "/api/camper",
+      "method": "POST",
+      "module": [
+        "api/camper/activate.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/camper/login",
+      "mountPath": "/api/camper",
+      "method": "POST",
+      "module": [
+        "api/camper/login.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/camper/profile",
+      "mountPath": "/api/camper",
+      "method": "GET",
+      "module": [
+        "api/camper/profile.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/camper/profile",
+      "mountPath": "/api/camper",
+      "method": "POST",
+      "module": [
+        "api/camper/profile.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/camper/profile",
+      "mountPath": "/api/camper",
+      "method": "PUT",
+      "module": [
+        "api/camper/profile.ts:onRequestPut"
+      ]
+    },
+    {
+      "routePath": "/api/camper/resend-email",
+      "mountPath": "/api/camper",
+      "method": "POST",
+      "module": [
+        "api/camper/resend-email.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/agent",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/agent.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/churches",
+      "mountPath": "/api",
+      "method": "DELETE",
+      "module": [
+        "api/churches.ts:onRequestDelete"
+      ]
+    },
+    {
+      "routePath": "/api/churches",
+      "mountPath": "/api",
+      "method": "GET",
+      "module": [
+        "api/churches.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/churches",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/churches.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/churches",
+      "mountPath": "/api",
+      "method": "PUT",
+      "module": [
+        "api/churches.ts:onRequestPut"
+      ]
+    },
+    {
+      "routePath": "/api/invite",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/invite.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/signup",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/signup.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/stats",
+      "mountPath": "/api",
+      "method": "GET",
+      "module": [
+        "api/stats.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/sync-pcci",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/sync-pcci.ts:onRequestPost"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}
