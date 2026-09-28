@@ -16,7 +16,6 @@ import {
   Check
 } from 'lucide-react';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
-import { Code128Barcode } from './ui/Code128Barcode';
 import {
   Dialog,
   DialogContent,
@@ -101,7 +100,7 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isBarcodeUrlCopied, setIsBarcodeUrlCopied] = useState(false);
+  const [isProfileUrlCopied, setIsProfileUrlCopied] = useState(false);
   const [isPassCodeCopied, setIsPassCodeCopied] = useState(false);
 
   if (camper.id !== prevCamperId) {
@@ -194,12 +193,12 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
         />
       </div>
 
-      {/* SECTION 2: OFFICIAL SCANNABLE PASS BARCODE & CHECK-IN LINK */}
+      {/* SECTION 2: OFFICIAL PUBLIC PROFILE QR & PASS CODE */}
       {(() => {
         const passCode = camper.activation_code || 'VLC-DELEGATE';
-        const checkInUrl = typeof window !== 'undefined'
-          ? `${window.location.origin}/?code=${encodeURIComponent(passCode)}`
-          : `https://summer-camp-vlc2027.pages.dev/?code=${encodeURIComponent(passCode)}`;
+        const camperId = camper.id || '';
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://summer-camp-vlc2027.pages.dev';
+        const profileUrl = camperId ? `${origin}/camper/${camperId}` : origin;
 
         return (
           <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80 space-y-3">
@@ -207,30 +206,14 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#0b57d0]" />
                 <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wide">
-                  Official Scannable Barcode &amp; Pass
+                  Official Profile QR &amp; Pass
                 </h3>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white text-zinc-600 border border-zinc-200 font-bold">
-                1D Code 128 + 2D QR
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold">
+                Camper Profile QR
               </span>
             </div>
 
-            {/* 1D Linear Barcode for scanners */}
-            <div className="p-2.5 bg-white border border-zinc-200/90 rounded-xl flex flex-col items-center justify-center shadow-2xs">
-              <Code128Barcode
-                value={passCode}
-                height={36}
-                width="100%"
-                showText={false}
-                barColor="#1f1f1f"
-              />
-              <div className="flex items-center justify-between w-full px-2 pt-1 font-mono text-[10px] text-zinc-500">
-                <span className="uppercase tracking-wider">Pass Barcode:</span>
-                <strong className="text-zinc-900 tracking-widest">{passCode}</strong>
-              </div>
-            </div>
-
-            {/* QR Code and Fast Check-In Link */}
             <div className="flex items-center justify-between gap-4 pt-1">
               <div className="space-y-1 min-w-0 flex-1">
                 <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
@@ -254,28 +237,28 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
                   </button>
                 </div>
                 <p className="text-[10px] text-zinc-500 leading-tight">
-                  Scannable at entrance and session desks for instant badge check-in.
+                  Scan this QR code with any smartphone to open your camper public profile.
                 </p>
 
                 <div className="pt-1">
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard?.writeText(checkInUrl);
-                      setIsBarcodeUrlCopied(true);
-                      setTimeout(() => setIsBarcodeUrlCopied(false), 2000);
+                      navigator.clipboard?.writeText(profileUrl);
+                      setIsProfileUrlCopied(true);
+                      setTimeout(() => setIsProfileUrlCopied(false), 2000);
                     }}
                     className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
                   >
-                    {isBarcodeUrlCopied ? (
+                    {isProfileUrlCopied ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-700 font-bold">Check-In URL Copied!</span>
+                        <span className="text-emerald-700 font-bold">Profile Link Copied!</span>
                       </>
                     ) : (
                       <>
                         <Link2 className="w-3.5 h-3.5" />
-                        <span>Copy Scannable URL</span>
+                        <span>Copy Public Profile Link</span>
                       </>
                     )}
                   </button>
@@ -283,7 +266,7 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
               </div>
 
               <div className="p-2 bg-white border border-zinc-200 rounded-2xl shrink-0 shadow-2xs">
-                <QRCodeCanvas value={checkInUrl} size={80} />
+                <QRCodeCanvas value={profileUrl} size={84} />
               </div>
             </div>
           </div>

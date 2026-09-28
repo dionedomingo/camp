@@ -234,7 +234,7 @@ export const AdminIdPrintQueue: FC<AdminIdPrintQueueProps> = ({ churches, curren
             </Badge>
           </div>
           <p className="text-xs text-zinc-500 mt-1">
-            Batch badge production, scannable barcode generation &amp; reprint audit tracking.
+            Batch badge production, public profile QR code generation &amp; reprint audit tracking.
           </p>
         </div>
 
@@ -685,25 +685,13 @@ export const AdminIdPrintQueue: FC<AdminIdPrintQueueProps> = ({ churches, curren
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={themeConfig.showBarcode}
-                      onChange={(e) =>
-                        handleSaveTheme({ ...themeConfig, showBarcode: e.target.checked })
-                      }
-                      className="rounded text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span>1D Scannable Barcode (Code 128)</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
                       checked={themeConfig.showQrCode}
                       onChange={(e) =>
                         handleSaveTheme({ ...themeConfig, showQrCode: e.target.checked })
                       }
                       className="rounded text-indigo-600 focus:ring-indigo-500"
                     />
-                    <span>2D Fast Check-in QR Code</span>
+                    <span>Camper Public Profile QR Code</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -801,7 +789,7 @@ export const AdminIdPrintQueue: FC<AdminIdPrintQueueProps> = ({ churches, curren
               Print Badge Preview
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-500 text-center">
-              Official delegate badge card with dual scannable barcodes.
+              Official delegate badge card with public profile QR code.
             </DialogDescription>
           </DialogHeader>
 

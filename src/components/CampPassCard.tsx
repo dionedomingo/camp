@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import type { CamperRegistration, CamperRole } from '../types';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
-import { Code128Barcode } from './ui/Code128Barcode';
 
 interface CampPassCardProps {
   camper: CamperRegistration;
@@ -42,9 +41,10 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
   const passCode = camper.activation_code || camper.id?.toUpperCase() || 'VLC-2027';
   const displayEventName = eventName || camper.active_event_name || 'VLC 2027';
 
-  // Construct activation URL for QR code
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vlc2027.pcci.ph';
-  const qrUrl = `${origin}/?activate_token=${camper.activation_token || ''}&code=${passCode}&event_id=${camper.event_id || ''}`;
+  // Construct camper public profile URL for QR code
+  const camperId = camper.id || '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://summer-camp-vlc2027.pages.dev';
+  const profileUrl = camperId ? `${origin}/camper/${camperId}` : origin;
 
   const handleCopyCode = () => {
     navigator.clipboard?.writeText(passCode);
@@ -144,23 +144,8 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
           )}
         </div>
 
-        {/* Pass Footer with Scannable 1D Barcode & 2D QR Code */}
-        <div className="pt-3 border-t border-[#f1f3f4] space-y-3">
-          {/* 1D Scannable Linear Barcode for handheld laser scanners */}
-          <div className="p-2.5 bg-zinc-50 border border-zinc-200/90 rounded-2xl flex flex-col items-center justify-center">
-            <Code128Barcode
-              value={passCode}
-              height={36}
-              width="100%"
-              showText={false}
-              barColor="#1f1f1f"
-            />
-            <div className="flex items-center justify-between w-full px-2 pt-1 font-mono text-[10px] text-zinc-500">
-              <span className="uppercase tracking-wider">Pass Barcode:</span>
-              <strong className="text-zinc-900 tracking-widest">{passCode}</strong>
-            </div>
-          </div>
-
+        {/* Pass Footer with Public Profile QR Code & Pass Code */}
+        <div className="pt-3 border-t border-[#f1f3f4]">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-mono text-[#747775] block uppercase tracking-wider">
@@ -181,16 +166,16 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
               </div>
               <p className="text-[10px] text-[#747775] leading-tight">
                 {isActivated 
-                  ? 'Pass verified! Use for meal claim & sessions.' 
-                  : 'Scan at entrance or enter code to activate.'}
+                  ? 'Pass verified! QR code links to your camper profile.' 
+                  : 'Scan QR code to view public profile, or enter code to activate.'}
               </p>
 
-              {/* Scannable Check-In URL Copy Action */}
+              {/* Public Profile URL Copy Action */}
               <div className="pt-1">
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard?.writeText(qrUrl);
+                    navigator.clipboard?.writeText(profileUrl);
                     setIsUrlCopied(true);
                     setTimeout(() => setIsUrlCopied(false), 2000);
                   }}
@@ -199,12 +184,12 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
                   {isUrlCopied ? (
                     <>
                       <Check className="w-3 h-3 text-emerald-600" />
-                      <span className="text-emerald-700">Scannable URL Copied!</span>
+                      <span className="text-emerald-700">Profile Link Copied!</span>
                     </>
                   ) : (
                     <>
                       <Link2 className="w-3 h-3" />
-                      <span>Copy Scannable URL</span>
+                      <span>Copy Public Profile Link</span>
                     </>
                   )}
                 </button>
@@ -212,7 +197,7 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
             </div>
 
             <div className="p-2 bg-white border border-[#dadce0] rounded-2xl shrink-0 shadow-2xs">
-              <QRCodeCanvas value={qrUrl} size={84} />
+              <QRCodeCanvas value={profileUrl} size={84} />
             </div>
           </div>
         </div>

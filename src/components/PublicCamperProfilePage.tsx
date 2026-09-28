@@ -13,7 +13,6 @@ import {
   Check
 } from 'lucide-react';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
-import { Code128Barcode } from './ui/Code128Barcode';
 import type { CamperRegistration, CamperRole } from '../types';
 import { apiService } from '../services/api';
 
@@ -32,7 +31,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
   const [isLoading, setIsLoading] = useState(Boolean(camperId));
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-  const [isCheckInUrlCopied, setIsCheckInUrlCopied] = useState(false);
+  const [isProfileUrlCopied, setIsProfileUrlCopied] = useState(false);
   const [isPassCodeCopied, setIsPassCodeCopied] = useState(false);
 
   useEffect(() => {
@@ -241,45 +240,29 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
             </div>
           )}
 
-          {/* Official Scannable Barcode & Check-In Area */}
+          {/* Official Camper Public Profile QR & Pass Code */}
           {(() => {
             const passCode = camper.activation_code || camper.id || 'VLC-DELEGATE';
-            const checkInUrl = `${window.location.origin}/?code=${encodeURIComponent(passCode)}`;
+            const profileUrl = `${window.location.origin}/camper/${camper.id}`;
             return (
               <div className="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/90 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] uppercase font-bold text-zinc-500 tracking-wider flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-[#0b57d0]" />
-                    <span>Official Scannable Barcode &amp; Pass</span>
+                    <span>Official Profile QR &amp; Pass</span>
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 font-bold">
-                    1D Code 128 + 2D QR
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">
+                    Public Camper Profile QR
                   </span>
                 </div>
 
-                {/* 1D Linear Barcode for laser scanners */}
-                <div className="p-3 bg-zinc-50 border border-zinc-200/80 rounded-xl flex flex-col items-center justify-center">
-                  <Code128Barcode
-                    value={passCode}
-                    height={40}
-                    width="100%"
-                    showText={false}
-                    barColor="#18181b"
-                  />
-                  <div className="flex items-center justify-between w-full px-2 pt-1 font-mono text-[10px] text-zinc-500">
-                    <span className="uppercase tracking-wider">Pass Barcode:</span>
-                    <strong className="text-zinc-900 tracking-widest">{passCode}</strong>
-                  </div>
-                </div>
-
-                {/* QR Code and Fast Check-In Link */}
-                <div className="flex items-center justify-between gap-4 pt-1">
+                <div className="flex items-center justify-between gap-4">
                   <div className="space-y-1.5 min-w-0 flex-1">
                     <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
                       Activation / Pass Code
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-bold text-zinc-900 truncate">
+                      <span className="font-mono text-base font-bold text-zinc-900 tracking-wider">
                         {passCode}
                       </span>
                       <button
@@ -296,28 +279,28 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
                       </button>
                     </div>
                     <p className="text-[11px] text-zinc-500 leading-tight">
-                      Present at camp arrival desk for instant barcode scanning and badge verification.
+                      Scan this QR code with any smartphone camera to open and share this public camper profile.
                     </p>
 
                     <div className="pt-1">
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard?.writeText(checkInUrl);
-                          setIsCheckInUrlCopied(true);
-                          setTimeout(() => setIsCheckInUrlCopied(false), 2000);
+                          navigator.clipboard?.writeText(profileUrl);
+                          setIsProfileUrlCopied(true);
+                          setTimeout(() => setIsProfileUrlCopied(false), 2000);
                         }}
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
                       >
-                        {isCheckInUrlCopied ? (
+                        {isProfileUrlCopied ? (
                           <>
                             <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="text-emerald-700 font-bold">Check-In URL Copied!</span>
+                            <span className="text-emerald-700 font-bold">Profile Link Copied!</span>
                           </>
                         ) : (
                           <>
                             <Link2 className="w-3.5 h-3.5" />
-                            <span>Copy Scannable Check-In URL</span>
+                            <span>Copy Public Profile Link</span>
                           </>
                         )}
                       </button>
@@ -325,7 +308,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
                   </div>
 
                   <div className="p-2 bg-white border border-zinc-200 rounded-2xl shrink-0 shadow-2xs">
-                    <QRCodeCanvas value={checkInUrl} size={88} />
+                    <QRCodeCanvas value={profileUrl} size={92} />
                   </div>
                 </div>
               </div>

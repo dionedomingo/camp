@@ -273,7 +273,6 @@ export interface BadgeThemeConfig {
   showChurch: boolean;
   showRole: boolean;
   showVerse: boolean;
-  showBarcode: boolean;
   showQrCode: boolean;
   showEmergencyContact: boolean;
   headerStyle: 'solid' | 'gradient' | 'minimal';
@@ -286,7 +285,6 @@ export const DEFAULT_BADGE_CONFIG: BadgeThemeConfig = {
   showChurch: true,
   showRole: true,
   showVerse: true,
-  showBarcode: true,
   showQrCode: true,
   showEmergencyContact: false,
   headerStyle: 'gradient',

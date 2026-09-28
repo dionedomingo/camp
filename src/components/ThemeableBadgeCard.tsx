@@ -13,7 +13,6 @@ import {
   DEFAULT_BADGE_CONFIG 
 } from '../types';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
-import { Code128Barcode } from './ui/Code128Barcode';
 
 export interface ThemeableBadgeCardProps {
   camper: CamperRegistration | QueueDelegate;
@@ -29,7 +28,7 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
   isPrintPreview = false,
 }) => {
   const mergedConfig: BadgeThemeConfig = { ...DEFAULT_BADGE_CONFIG, ...config };
-  const { preset, orientation, showPhoto, showChurch, showRole, showVerse, showBarcode, showQrCode, showEmergencyContact } = mergedConfig;
+  const { preset, orientation, showPhoto, showChurch, showRole, showVerse, showQrCode, showEmergencyContact } = mergedConfig;
 
   const roleStyles: Record<CamperRole, { label: string; badgeClass: string }> = {
     admin: { label: 'CAMP ADMINISTRATOR', badgeClass: 'bg-zinc-900 text-amber-300 border-amber-400/40' },
@@ -48,9 +47,10 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
   const printCount = camper.print_count || 0;
   const isReprint = printCount > 1;
 
-  // Activation URL for 2D QR Code
+  // Camper Public Profile URL for 2D QR Code
+  const camperId = ('camper_id' in camper && camper.camper_id ? camper.camper_id : ('id' in camper ? camper.id : '')) || '';
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://summer-camp-vlc2027.pages.dev';
-  const qrUrl = `${origin}/?activate_token=${camper.activation_token || ''}&code=${passCode}&event_id=${camper.event_id || ''}`;
+  const qrUrl = camperId ? `${origin}/camper/${camperId}` : origin;
 
   // Theme-specific styling definitions
   const themeStyles = {
@@ -60,8 +60,6 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
       headerText: 'text-zinc-950 font-black',
       headerSub: 'text-zinc-900 font-semibold',
       accentColor: '#f59e0b',
-      barcodeBg: 'bg-white/95 rounded-xl p-2',
-      barcodeColor: '#090d16',
       qrBorder: 'border-amber-400/50',
       verseBox: 'bg-white/5 border border-amber-500/20 text-amber-100',
       reprintBadge: 'bg-amber-400 text-zinc-950 border-amber-300 font-black',
@@ -75,8 +73,6 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
       headerText: 'text-zinc-950 font-black',
       headerSub: 'text-emerald-950 font-semibold',
       accentColor: '#10b981',
-      barcodeBg: 'bg-white/95 rounded-xl p-2',
-      barcodeColor: '#022c22',
       qrBorder: 'border-emerald-400/50',
       verseBox: 'bg-white/5 border border-emerald-400/20 text-emerald-100',
       reprintBadge: 'bg-emerald-400 text-zinc-950 border-emerald-300 font-black',
@@ -90,8 +86,6 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
       headerText: 'text-white font-bold',
       headerSub: 'text-blue-100',
       accentColor: '#1565c0',
-      barcodeBg: 'bg-zinc-50 border border-zinc-200 rounded-xl p-2',
-      barcodeColor: '#1f2937',
       qrBorder: 'border-zinc-300',
       verseBox: 'bg-blue-50/60 border border-blue-200/80 text-blue-950',
       reprintBadge: 'bg-red-600 text-white border-red-700 font-bold',
@@ -105,8 +99,6 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
       headerText: 'text-white font-black tracking-wider',
       headerSub: 'text-zinc-400 font-mono',
       accentColor: '#18181b',
-      barcodeBg: 'bg-zinc-100 border border-zinc-300 rounded-xl p-2',
-      barcodeColor: '#09090b',
       qrBorder: 'border-zinc-900',
       verseBox: 'bg-zinc-100 border border-zinc-300 text-zinc-800',
       reprintBadge: 'bg-zinc-950 text-white border-zinc-800 font-mono font-bold',
@@ -120,8 +112,6 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
       headerText: 'text-zinc-950 font-black',
       headerSub: 'text-orange-950 font-bold',
       accentColor: '#f97316',
-      barcodeBg: 'bg-white/95 rounded-xl p-2',
-      barcodeColor: '#431407',
       qrBorder: 'border-orange-400/50',
       verseBox: 'bg-white/10 border border-orange-400/30 text-orange-100',
       reprintBadge: 'bg-rose-500 text-white border-rose-400 font-bold',
@@ -243,28 +233,26 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
             </div>
           )}
 
-          {/* Scannable Dual Codes: 1D Barcode & 2D QR Code Included Directly in Layout */}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-3">
-            {/* 1D Linear Barcode for Laser Scanners & Pass Code */}
-            {showBarcode && (
-              <div className={`flex-1 flex flex-col items-center justify-center ${theme.barcodeBg}`}>
-                <Code128Barcode
-                  value={passCode}
-                  height={34}
-                  showText={true}
-                  barColor={theme.barcodeColor}
-                  textColor={theme.barcodeColor}
-                />
+          {/* Scannable 2D QR Code for Camper Public Profile */}
+          {showQrCode && (
+            <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0 space-y-1">
+                <span className="text-[9px] uppercase font-mono tracking-wider opacity-75 block">
+                  Delegate Pass Code
+                </span>
+                <div className="font-mono text-sm font-black tracking-widest truncate">
+                  {passCode}
+                </div>
+                <p className="text-[9px] opacity-65 leading-tight">
+                  Scan QR code to view camper public profile
+                </p>
               </div>
-            )}
 
-            {/* 2D QR Code for Fast Mobile Arrival Scanning */}
-            {showQrCode && (
               <div className={`p-1.5 bg-white rounded-2xl shrink-0 border ${theme.qrBorder} shadow-2xs`}>
-                <QRCodeCanvas value={qrUrl} size={70} />
+                <QRCodeCanvas value={qrUrl} size={74} />
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Optional Emergency Contact Footer */}
           {showEmergencyContact && camper.emergency_name && (
@@ -344,20 +332,19 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
               </div>
             </div>
 
-            {/* Right Column: Scannable 1D Barcode & 2D QR Code */}
-            <div className="col-span-5 flex items-center justify-end gap-2">
-              {showBarcode && (
-                <div className={`flex flex-col items-center justify-center ${theme.barcodeBg}`}>
-                  <Code128Barcode
-                    value={passCode}
-                    height={38}
-                    width={110}
-                    showText={true}
-                    barColor={theme.barcodeColor}
-                    textColor={theme.barcodeColor}
-                  />
-                </div>
-              )}
+            {/* Right Column: Scannable 2D QR Code for Camper Public Profile */}
+            <div className="col-span-5 flex items-center justify-end gap-3">
+              <div className="text-right space-y-0.5">
+                <span className="text-[8px] uppercase font-mono tracking-wider opacity-70 block">
+                  Pass Code
+                </span>
+                <span className="font-mono text-xs font-bold block">
+                  {passCode}
+                </span>
+                <span className="text-[8px] opacity-60 block">
+                  Camper Profile QR
+                </span>
+              </div>
               {showQrCode && (
                 <div className={`p-1 bg-white rounded-xl shrink-0 border ${theme.qrBorder} shadow-2xs`}>
                   <QRCodeCanvas value={qrUrl} size={64} />
