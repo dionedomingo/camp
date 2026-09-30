@@ -64,6 +64,13 @@ Execute the database schema and seed data into your local D1 SQLite database:
 npm run d1:init
 ```
 
+**Need to clear and reset the local database?**  
+If you run into foreign key errors or want to wipe all local data and re-run all migrations/seeds from scratch, run:
+```bash
+npm run d1:reset
+```
+*(This safely deletes the local `.wrangler/state/v3/d1` folder and automatically re-runs `d1:init`)*
+
 ### 3. Start Development Server
 ```bash
 npm run dev

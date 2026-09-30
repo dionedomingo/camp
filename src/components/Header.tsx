@@ -7,11 +7,12 @@ import {
   Menu,
   Building2,
   Calendar,
-  Flame
+  Flame,
+  Home
 } from 'lucide-react';
 import type { AdminUser, CamperRegistration } from '../types';
 
-export type AppTab = 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed';
+export type AppTab = 'home' | 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed';
 
 interface HeaderProps {
   onLogoClick: () => void;
@@ -22,6 +23,7 @@ interface HeaderProps {
   onCamperClick?: () => void;
   onActivateClick?: () => void;
   onOpenAdminDrawer?: () => void;
+  onNavigateToHome?: () => void;
   onNavigateToSchedule?: () => void;
   onNavigateToOverview?: () => void;
   onNavigateToChurches?: () => void;
@@ -38,6 +40,7 @@ export const Header: FC<HeaderProps> = ({
   onCamperClick,
   onActivateClick,
   onOpenAdminDrawer,
+  onNavigateToHome,
   onNavigateToSchedule,
   onNavigateToOverview,
   onNavigateToChurches,
@@ -82,6 +85,19 @@ export const Header: FC<HeaderProps> = ({
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 ml-2">
+            {onNavigateToHome && (
+              <button
+                onClick={onNavigateToHome}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${activeTab === 'home'
+                  ? 'bg-blue-50 text-blue-700 font-semibold shadow-2xs'
+                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                  }`}
+              >
+                <Home className="w-3.5 h-3.5 text-blue-600" />
+                <span>Home</span>
+              </button>
+            )}
+
             {onNavigateToFeed && (
               <button
                 onClick={onNavigateToFeed}
@@ -227,6 +243,18 @@ export const Header: FC<HeaderProps> = ({
       {/* Mobile Sub-Navigation Bar for Non-Admin Views */}
       {!isAdminAuthenticated && (
         <div className="md:hidden flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-50 border-t border-zinc-200/60 overflow-x-auto scrollbar-none">
+          {onNavigateToHome && (
+            <button
+              onClick={onNavigateToHome}
+              className={`tap-pill px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1.5 ${activeTab === 'home'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100'
+                }`}
+            >
+              <Home className="w-3 h-3" />
+              <span>Home</span>
+            </button>
+          )}
           {onNavigateToFeed && (
             <button
               onClick={onNavigateToFeed}

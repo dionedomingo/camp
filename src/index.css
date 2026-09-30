@@ -29,3 +29,43 @@
 .tap-pill:active {
   transform: scale(0.97);
 }
+
+/* Festivent-inspired Marquee Animation */
+@keyframes marquee-scroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee-scroll {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 35s linear infinite;
+}
+
+.animate-marquee-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Festivent-inspired Glow Card */
+.glow-card {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-card:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 30px -5px rgba(59, 130, 246, 0.25);
+  transform: translateY(-3px);
+}
+
+/* Ambient Pulse Glow */
+@keyframes pulse-ambient {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+
+.animate-pulse-ambient {
+  animation: pulse-ambient 8s ease-in-out infinite;
+}
+

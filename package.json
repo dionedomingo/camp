@@ -13,6 +13,7 @@
     "cf:functions": "npx wrangler pages dev dist --port 8788",
     "pages:dev": "wrangler pages dev ./dist",
     "d1:init": "wrangler d1 execute vlc2027-camp-db --local --file=./d1/schema.sql && wrangler d1 execute vlc2027-camp-db --local --file=./d1/seed.sql",
+    "d1:reset": "rm -rf .wrangler/state/v3/d1 && npm run d1:init",
     "d1:remote": "wrangler d1 execute vlc2027-camp-db --remote",
     "d1:remote:file": "wrangler d1 execute vlc2027-camp-db --remote -y --file",
     "deploy": "npm run build && wrangler pages deploy ./dist"

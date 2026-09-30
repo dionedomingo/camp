@@ -87,6 +87,8 @@ CREATE TABLE IF NOT EXISTS campers (
     reset_token TEXT,
     reset_token_expires_at DATETIME,
     status TEXT DEFAULT 'registered', -- 'registered', 'activated', 'cancelled'
+    is_active INTEGER DEFAULT 1,
+    last_login_at DATETIME,
     checked_in_at DATETIME,
     checked_in_by TEXT,
     kit_claimed INTEGER DEFAULT 0,

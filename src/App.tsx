@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header, type AppTab } from './components/Header';
+import { FestiventLandingPage } from './components/FestiventLandingPage';
 import { OfficialSchedulePage } from './components/OfficialSchedulePage';
 import { LiveDashboard } from './components/LiveDashboard';
 import { ChurchDirectory } from './components/ChurchDirectory';
@@ -21,7 +22,7 @@ export function App() {
   const [activeEvent, setActiveEvent] = useState<CampEvent | null>(null);
   const [churches, setChurches] = useState<Church[]>([]);
   const [activeChurch, setActiveChurch] = useState<Church | null>(null);
-  // Dedicated SPA routing supporting /join, /overview, /admin, /, and /camper/:id
+  // Dedicated SPA routing supporting /, /schedule, /join, /overview, /admin, and /camper/:id
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname.toLowerCase();
@@ -40,6 +41,9 @@ export function App() {
       if (pathname === '/admin') {
         return 'admin';
       }
+      if (pathname === '/schedule') {
+        return 'schedule';
+      }
       const params = new URLSearchParams(window.location.search);
       if (params.get('church')) {
         return 'churches';
@@ -47,7 +51,7 @@ export function App() {
       const isAdmin = sessionStorage.getItem('vlc_admin_authenticated') === 'true';
       if (isAdmin && pathname === '/') return 'admin';
     }
-    return 'schedule';
+    return 'home';
   });
 
   const navigateToTab = (tab: AppTab, options?: { churchSlug?: string; camperId?: string; replace?: boolean }) => {
@@ -55,7 +59,11 @@ export function App() {
     if (typeof window === 'undefined') return;
 
     let targetPath = '/';
-    if (tab === 'churches') {
+    if (tab === 'home') {
+      targetPath = '/';
+    } else if (tab === 'schedule') {
+      targetPath = '/schedule';
+    } else if (tab === 'churches') {
       targetPath = options?.churchSlug ? `/join?church=${options.churchSlug}` : '/join';
     } else if (tab === 'dashboard') {
       targetPath = '/overview';
@@ -63,8 +71,6 @@ export function App() {
       targetPath = '/admin';
     } else if (tab === 'feed') {
       targetPath = '/feed';
-    } else if (tab === 'schedule') {
-      targetPath = '/';
     } else if (tab === 'profile') {
       targetPath = options?.camperId ? `/camper/${options.camperId}` : '/camper';
     }
@@ -193,8 +199,10 @@ export function App() {
         setActiveTab('dashboard');
       } else if (pathname === '/admin') {
         setActiveTab('admin');
-      } else if (pathname === '/' || pathname === '/schedule') {
+      } else if (pathname === '/schedule') {
         setActiveTab('schedule');
+      } else if (pathname === '/' || pathname === '') {
+        setActiveTab('home');
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -378,14 +386,14 @@ export function App() {
     setCurrentCamper(null);
     setIsAdminAuthenticated(false);
     setIsAdminDrawerOpen(false);
-    navigateToTab('schedule'); // Return to non-admin homepage
+    navigateToTab('home'); // Return to home landing page
   };
 
   return (
     <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
       {/* Top Fixed Header with Schedule, Overview, Churches, and Sign-in */}
       <Header
-        onLogoClick={() => navigateToTab(isAdminAuthenticated ? 'admin' : 'schedule')}
+        onLogoClick={() => navigateToTab(isAdminAuthenticated ? 'admin' : 'home')}
         onSignInClick={handleOpenAuth}
         isAdminAuthenticated={isAdminAuthenticated}
         currentUser={currentUser}
@@ -393,6 +401,7 @@ export function App() {
         onCamperClick={() => setIsCamperHubOpen(true)}
         onActivateClick={() => setIsActivationOpen(true)}
         onOpenAdminDrawer={() => setIsAdminDrawerOpen(true)}
+        onNavigateToHome={() => navigateToTab('home')}
         onNavigateToSchedule={() => navigateToTab('schedule')}
         onNavigateToOverview={() => navigateToTab('dashboard')}
         onNavigateToChurches={() => navigateToTab('churches')}
@@ -401,8 +410,21 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
-        {/* Default Homepage for Non-Admin Users: Official Schedule & Upcoming Gatherings */}
+      <main className={activeTab === 'home' ? 'flex-1 w-full p-0 m-0 max-w-none' : 'flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8'}>
+        {/* Festivent-Inspired Full-Width Hero Landing Page (Default for /) */}
+        {activeTab === 'home' && (
+          <FestiventLandingPage
+            event={activeEvent}
+            stats={stats}
+            churches={churches}
+            onStartSignup={(church, event) => handleStartSignup(church, event)}
+            onNavigateToSchedule={() => navigateToTab('schedule')}
+            onNavigateToChurches={() => navigateToTab('churches')}
+            onOpenActivation={() => setIsActivationOpen(true)}
+          />
+        )}
+
+        {/* Official Schedule & Upcoming Gatherings */}
         {activeTab === 'schedule' && (
           <OfficialSchedulePage
             currentCamper={currentCamper}
