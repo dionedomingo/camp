@@ -392,22 +392,24 @@ export function App() {
   return (
     <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
       {/* Top Fixed Header with Schedule, Overview, Churches, and Sign-in */}
-      <Header
-        onLogoClick={() => navigateToTab(isAdminAuthenticated ? 'admin' : 'home')}
-        onSignInClick={handleOpenAuth}
-        isAdminAuthenticated={isAdminAuthenticated}
-        currentUser={currentUser}
-        currentCamper={currentCamper}
-        onCamperClick={() => setIsCamperHubOpen(true)}
-        onActivateClick={() => setIsActivationOpen(true)}
-        onOpenAdminDrawer={() => setIsAdminDrawerOpen(true)}
-        onNavigateToHome={() => navigateToTab('home')}
-        onNavigateToSchedule={() => navigateToTab('schedule')}
-        onNavigateToOverview={() => navigateToTab('dashboard')}
-        onNavigateToChurches={() => navigateToTab('churches')}
-        onNavigateToFeed={() => navigateToTab('feed')}
-        activeTab={activeTab}
-      />
+      {activeTab !== 'home' && (
+        <Header
+          onLogoClick={() => navigateToTab(isAdminAuthenticated ? 'admin' : 'home')}
+          onSignInClick={handleOpenAuth}
+          isAdminAuthenticated={isAdminAuthenticated}
+          currentUser={currentUser}
+          currentCamper={currentCamper}
+          onCamperClick={() => setIsCamperHubOpen(true)}
+          onActivateClick={() => setIsActivationOpen(true)}
+          onOpenAdminDrawer={() => setIsAdminDrawerOpen(true)}
+          onNavigateToHome={() => navigateToTab('home')}
+          onNavigateToSchedule={() => navigateToTab('schedule')}
+          onNavigateToOverview={() => navigateToTab('dashboard')}
+          onNavigateToChurches={() => navigateToTab('churches')}
+          onNavigateToFeed={() => navigateToTab('feed')}
+          activeTab={activeTab}
+        />
+      )}
 
       {/* Main Content Area */}
       <main className={activeTab === 'home' ? 'flex-1 w-full p-0 m-0 max-w-none' : 'flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8'}>
@@ -421,6 +423,7 @@ export function App() {
             onNavigateToSchedule={() => navigateToTab('schedule')}
             onNavigateToChurches={() => navigateToTab('churches')}
             onOpenActivation={() => setIsActivationOpen(true)}
+            onOpenLogin={handleOpenAuth}
           />
         )}
 

@@ -11,6 +11,8 @@ import {
   Home
 } from 'lucide-react';
 import type { AdminUser, CamperRegistration } from '../types';
+import { useLanguage } from '../lib/i18n';
+import { LanguageSelector } from './LanguageSelector';
 
 export type AppTab = 'home' | 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed';
 
@@ -47,6 +49,7 @@ export const Header: FC<HeaderProps> = ({
   onNavigateToFeed,
   activeTab,
 }) => {
+  const { t } = useLanguage();
   const avatarSelfie = currentUser?.selfie_url || currentCamper?.selfie_url;
 
   return (
@@ -94,7 +97,7 @@ export const Header: FC<HeaderProps> = ({
                   }`}
               >
                 <Home className="w-3.5 h-3.5 text-blue-600" />
-                <span>Home</span>
+                <span>{t('nav.home')}</span>
               </button>
             )}
 
@@ -107,7 +110,7 @@ export const Header: FC<HeaderProps> = ({
                   }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Community Feed</span>
+                <span>{t('nav.feed')}</span>
               </button>
             )}
 
@@ -120,7 +123,7 @@ export const Header: FC<HeaderProps> = ({
                   }`}
               >
                 <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                <span>Official Schedule</span>
+                <span>{t('nav.schedule')}</span>
               </button>
             )}
 
@@ -133,7 +136,7 @@ export const Header: FC<HeaderProps> = ({
                   }`}
               >
                 <Flame className="w-3.5 h-3.5 text-yellow-500" />
-                <span>Camp Overview</span>
+                <span>{t('nav.overview')}</span>
               </button>
             )}
 
@@ -146,7 +149,7 @@ export const Header: FC<HeaderProps> = ({
                   }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
-                <span>Church Delegations</span>
+                <span>{t('nav.delegations')}</span>
               </button>
             )}
           </nav>
@@ -154,6 +157,9 @@ export const Header: FC<HeaderProps> = ({
 
         {/* Right Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Selector */}
+          <LanguageSelector variant="header" />
+
           {/* Arrival Fast Check-In Link */}
           {!isAdminAuthenticated && !currentCamper && onActivateClick && (
             <button
@@ -161,7 +167,7 @@ export const Header: FC<HeaderProps> = ({
               className="tap-pill hidden sm:inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold border border-emerald-200/80 transition-all cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Arrived? Check In</span>
+              <span>{t('nav.fastCheckIn')}</span>
             </button>
           )}
 
@@ -234,7 +240,7 @@ export const Header: FC<HeaderProps> = ({
               className="flex items-center gap-2 p-2 sm:px-3.5 sm:py-1.5 rounded-full bg-zinc-100 text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900 transition-all cursor-pointer"
             >
               <User className="w-4 h-4" />
-              <span className="text-xs font-semibold hidden sm:inline">Sign In</span>
+              <span className="text-xs font-semibold hidden sm:inline">{t('nav.signIn')}</span>
             </button>
           )}
         </div>
@@ -252,7 +258,7 @@ export const Header: FC<HeaderProps> = ({
                 }`}
             >
               <Home className="w-3 h-3" />
-              <span>Home</span>
+              <span>{t('nav.home')}</span>
             </button>
           )}
           {onNavigateToFeed && (
@@ -264,7 +270,7 @@ export const Header: FC<HeaderProps> = ({
                 }`}
             >
               <Sparkles className="w-3 h-3 text-amber-400" />
-              <span>Feed</span>
+              <span>{t('nav.feed')}</span>
             </button>
           )}
           {onNavigateToSchedule && (
@@ -276,7 +282,7 @@ export const Header: FC<HeaderProps> = ({
                 }`}
             >
               <Calendar className="w-3 h-3" />
-              <span>Schedule</span>
+              <span>{t('nav.schedule')}</span>
             </button>
           )}
           {onNavigateToOverview && (
@@ -288,7 +294,7 @@ export const Header: FC<HeaderProps> = ({
                 }`}
             >
               <Flame className="w-3 h-3 text-yellow-500" />
-              <span>Overview</span>
+              <span>{t('nav.overview')}</span>
             </button>
           )}
           {onNavigateToChurches && (
@@ -300,7 +306,7 @@ export const Header: FC<HeaderProps> = ({
                 }`}
             >
               <Building2 className="w-3 h-3" />
-              <span>Delegations</span>
+              <span>{t('nav.delegations')}</span>
             </button>
           )}
         </div>
