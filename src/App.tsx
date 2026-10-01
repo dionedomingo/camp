@@ -9,11 +9,13 @@ import { UnifiedLoginModal } from './components/UnifiedLoginModal';
 import { AgenticSignupModal } from './components/AgenticSignup/AgenticSignupModal';
 import { InviteFriendModal } from './components/InviteFriendModal';
 import { CamperActivationModal } from './components/CamperActivationModal';
-import { CamperHubModal } from './components/CamperHubModal';
+import { CamperHubModal, type CamperHubTab } from './components/CamperHubModal';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { PublicCamperProfilePage } from './components/PublicCamperProfilePage';
 import { CommunityFeed } from './components/CommunityFeed';
 import { AdminLeftDrawer, type AdminTab } from './components/AdminLeftDrawer';
+import { UserRightDrawer } from './components/UserRightDrawer';
+import { DigitalPassModal } from './components/DigitalPassModal';
 import type { Church, RegistrationStats, CamperRegistration, AdminUser, CampEvent } from './types';
 import { apiService } from './services/api';
 
@@ -99,6 +101,9 @@ export function App() {
     return null;
   });
   const [isCamperHubOpen, setIsCamperHubOpen] = useState(false);
+  const [camperHubTab, setCamperHubTab] = useState<CamperHubTab>('pass');
+  const [isUserDrawerOpen, setIsUserDrawerOpen] = useState(false);
+  const [isDigitalPassModalOpen, setIsDigitalPassModalOpen] = useState(false);
 
   // Camper On-Arrival Activation Modal state
   const [isActivationOpen, setIsActivationOpen] = useState(false);
@@ -389,17 +394,57 @@ export function App() {
     navigateToTab('home'); // Return to home landing page
   };
 
+  const handleOpenCamperHubWithTab = (tab: CamperHubTab = 'pass') => {
+    setCamperHubTab(tab);
+    setIsCamperHubOpen(true);
+  };
+
+  const handleSignOutUnified = () => {
+    if (isAdminAuthenticated) {
+      handleExitAdmin();
+    } else {
+      handleCamperSignOut();
+    }
+  };
+
+  const activeCamperForPass: CamperRegistration | null = currentCamper || (currentUser ? {
+    id: currentUser.id,
+    full_name: currentUser.name,
+    nickname: currentUser.nickname || currentUser.name,
+    email: currentUser.email,
+    church_name: currentUser.church_name || 'Camp Administration',
+    role: 'admin',
+    phone: '',
+    province: 'Nueva Vizcaya',
+    emergency_name: 'Camp Administration',
+    emergency_phone: '',
+    emergency_relation: 'Administration',
+    ministry_interests: ['Leadership', 'Operations'],
+    favorite_verse: 'Isaiah 60:1',
+    verse_reflection: 'Arise, shine, for your light has come, and the glory of the LORD rises upon you.',
+    selfie_url: currentUser.selfie_url,
+    status: 'activated',
+    checked_in_at: new Date().toISOString(),
+    activation_code: 'ADMIN-PASS',
+  } as CamperRegistration : null);
+
   return (
     <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
       {/* Top Fixed Header with Schedule, Overview, Churches, and Sign-in */}
       {activeTab !== 'home' && (
         <Header
           onLogoClick={() => navigateToTab(isAdminAuthenticated ? 'admin' : 'home')}
-          onSignInClick={handleOpenAuth}
+          onSignInClick={() => {
+            if (isAdminAuthenticated || currentCamper) {
+              setIsUserDrawerOpen(true);
+            } else {
+              handleOpenAuth();
+            }
+          }}
           isAdminAuthenticated={isAdminAuthenticated}
           currentUser={currentUser}
           currentCamper={currentCamper}
-          onCamperClick={() => setIsCamperHubOpen(true)}
+          onCamperClick={() => setIsUserDrawerOpen(true)}
           onActivateClick={() => setIsActivationOpen(true)}
           onOpenAdminDrawer={() => setIsAdminDrawerOpen(true)}
           onNavigateToHome={() => navigateToTab('home')}
@@ -424,6 +469,14 @@ export function App() {
             onNavigateToChurches={() => navigateToTab('churches')}
             onOpenActivation={() => setIsActivationOpen(true)}
             onOpenLogin={handleOpenAuth}
+            currentCamper={currentCamper}
+            currentUser={currentUser}
+            onSignOut={handleSignOutUnified}
+            onViewCamperProfile={handleOpenCamperProfile}
+            onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
+            onOpenAccount={() => handleOpenCamperHubWithTab('profile')}
+            onNavigateToAdmin={() => navigateToTab('admin')}
+            onOpenUserDrawer={() => setIsUserDrawerOpen(true)}
           />
         )}
 
@@ -635,6 +688,7 @@ export function App() {
         onInviteFriend={() => currentCamper && handleOpenInviteModal(currentCamper)}
         onProfileUpdated={handleProfileUpdated}
         onNavigateToSchedule={() => setActiveTab('schedule')}
+        initialTab={camperHubTab}
       />
 
       {/* Agentic Signup Modal Wizard */}
@@ -681,8 +735,40 @@ export function App() {
         />
       )}
 
+      {/* User Right Drawer for all pages (both campers & admins, with extra link for admins) */}
+      <UserRightDrawer
+        isOpen={isUserDrawerOpen}
+        onClose={() => setIsUserDrawerOpen(false)}
+        camper={currentCamper}
+        adminUser={currentUser}
+        isAdminAuthenticated={isAdminAuthenticated}
+        onViewProfile={() => {
+          if (currentCamper?.id) {
+            handleOpenCamperProfile(currentCamper.id);
+          } else {
+            handleOpenCamperHubWithTab('profile');
+          }
+        }}
+        onOpenAccount={() => handleOpenCamperHubWithTab('profile')}
+        onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
+        onSignOut={handleSignOutUnified}
+        onOpenAdmin={() => {
+          setIsUserDrawerOpen(false);
+          navigateToTab('admin');
+        }}
+      />
+
+      {/* Dedicated Digital Pass Modal - solely displays the digital pass with minimized scripture & expandable option */}
+      <DigitalPassModal
+        isOpen={isDigitalPassModalOpen}
+        onClose={() => setIsDigitalPassModalOpen(false)}
+        camper={activeCamperForPass}
+        onActivatePass={() => setIsActivationOpen(true)}
+        onInviteFriend={() => currentCamper && handleOpenInviteModal(currentCamper)}
+      />
+
     </div>
   );
-}
+};
 
 export default App;

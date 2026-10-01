@@ -1,13 +1,13 @@
 import { useState, useEffect, type FC } from 'react';
-import { 
-  Church as ChurchIcon, 
-  MapPin, 
-  BookOpen, 
-  Share2, 
-  Copy, 
-  CheckCircle2, 
-  Sparkles, 
-  Loader2, 
+import {
+  Church as ChurchIcon,
+  MapPin,
+  BookOpen,
+  Share2,
+  Copy,
+  CheckCircle2,
+  Sparkles,
+  Loader2,
   ArrowLeft,
   Link2,
   Check,
@@ -16,12 +16,12 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
-import type { 
-  CamperRegistration, 
-  CamperRole, 
-  CommunityPost, 
-  CommunityStory, 
-  AllowedReactionEmoji 
+import type {
+  CamperRegistration,
+  CamperRole,
+  CommunityPost,
+  CommunityStory,
+  AllowedReactionEmoji
 } from '../types';
 import { apiService } from '../services/api';
 import { StoryViewerModal } from './media/StoryViewerModal';
@@ -133,7 +133,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
   const handleShare = async () => {
     if (!camperId || !camper) return;
     const url = `${window.location.origin}/camper/${camperId}`;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -308,15 +308,9 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
           </div>
 
           {/* Section 1: Permanent Story Highlights Reel */}
-          <div className="bg-white rounded-3xl p-4 border border-zinc-200/90 shadow-2xs space-y-3">
+          <div >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Permanent Story Highlights ({stories.length})</span>
-              </span>
-              <span className="text-[10px] text-zinc-400 font-semibold">
-                Chronological vertical highlights
-              </span>
+
             </div>
 
             {isLoadingStories ? (
@@ -368,11 +362,10 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
             <button
               type="button"
               onClick={() => setActiveMediaTab('posts')}
-              className={`tap-pill py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeMediaTab === 'posts'
-                  ? 'bg-white text-zinc-900 shadow-xs'
-                  : 'text-zinc-500 hover:text-zinc-800'
-              }`}
+              className={`tap-pill py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${activeMediaTab === 'posts'
+                ? 'bg-white text-zinc-900 shadow-xs'
+                : 'text-zinc-500 hover:text-zinc-800'
+                }`}
             >
               <ImageIcon className="w-4 h-4 text-blue-600" />
               <span>Posts ({posts.length})</span>
@@ -381,11 +374,10 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
             <button
               type="button"
               onClick={() => setActiveMediaTab('badge')}
-              className={`tap-pill py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeMediaTab === 'badge'
-                  ? 'bg-white text-zinc-900 shadow-xs'
-                  : 'text-zinc-500 hover:text-zinc-800'
-              }`}
+              className={`tap-pill py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${activeMediaTab === 'badge'
+                ? 'bg-white text-zinc-900 shadow-xs'
+                : 'text-zinc-500 hover:text-zinc-800'
+                }`}
             >
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span>Pass &amp; Details</span>
@@ -583,11 +575,10 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
             <button
               type="button"
               onClick={handleShare}
-              className={`tap-pill w-full sm:w-auto py-3 px-5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-2xs shrink-0 ${
-                isCopied
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'border-zinc-200 hover:bg-zinc-50 text-zinc-700'
-              }`}
+              className={`tap-pill w-full sm:w-auto py-3 px-5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-2xs shrink-0 ${isCopied
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'border-zinc-200 hover:bg-zinc-50 text-zinc-700'
+                }`}
             >
               {isCopied ? (
                 <>

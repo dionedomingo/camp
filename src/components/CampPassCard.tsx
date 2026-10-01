@@ -7,10 +7,38 @@ import {
   Copy,
   Check,
   Sparkles,
-  Link2
+  Link2,
+  ChevronDown
 } from 'lucide-react';
 import type { CamperRegistration, CamperRole } from '../types';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
+
+function parseScripture(favoriteVerse?: string, verseReflection?: string) {
+  if (!favoriteVerse) return { reference: 'Isaiah 60:1', fullText: verseReflection || '' };
+  
+  const splitDash = favoriteVerse.split(/\s*[-–—]\s*/);
+  if (splitDash.length > 1 && splitDash[0].trim().match(/\d+:\d+/)) {
+    return {
+      reference: splitDash[0].trim(),
+      fullText: splitDash.slice(1).join(' - ').trim() || verseReflection || '',
+    };
+  }
+
+  const match = favoriteVerse.match(/^((?:\d\s*)?[A-Za-z]+(?:\s+[A-Za-z]+)?\s+\d+:\d+(?:-\d+)?)(.*)$/i);
+  if (match) {
+    const ref = match[1].trim();
+    const remaining = match[2].trim().replace(/^[-:–—\s]+/, '');
+    return {
+      reference: ref,
+      fullText: remaining || verseReflection || '',
+    };
+  }
+
+  return {
+    reference: favoriteVerse.trim(),
+    fullText: verseReflection || '',
+  };
+}
 
 interface CampPassCardProps {
   camper: CamperRegistration;
@@ -23,6 +51,7 @@ interface CampPassCardProps {
 export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInviteFriend, onActivatePass }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isUrlCopied, setIsUrlCopied] = useState(false);
+  const [isVerseExpanded, setIsVerseExpanded] = useState(false);
 
   const roleStyles: Record<CamperRole, { label: string; badge: string }> = {
     admin: { label: 'CAMP ADMINISTRATOR', badge: 'bg-zinc-900 text-amber-400' },
@@ -131,18 +160,42 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
           </div>
         )}
 
-        {/* Scripture Anchor & Real-Time Reflection */}
-        <div className="rounded-2xl bg-[#f8fafd] border border-[#e8eaed] p-3.5 space-y-1.5 text-xs">
-          <div className="flex items-center gap-1.5 text-[#0b57d0] font-semibold">
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Scripture Anchor: {camper.favorite_verse}</span>
-          </div>
-          {camper.verse_reflection && (
-            <p className="text-[#444746] italic leading-relaxed text-[11px]">
-              &ldquo;{camper.verse_reflection}&rdquo;
-            </p>
-          )}
-        </div>
+        {/* Scripture Anchor (Minimized to Book & Chapter:Verse Reference with Expandable Option) */}
+        {(() => {
+          const scripture = parseScripture(camper.favorite_verse, camper.verse_reflection);
+          const hasExpandableContent = Boolean(scripture.fullText || camper.verse_reflection);
+
+          return (
+            <div className="rounded-2xl bg-[#f8fafd] border border-[#e8eaed] p-3 text-xs transition-all">
+              <button
+                type="button"
+                onClick={() => hasExpandableContent && setIsVerseExpanded(!isVerseExpanded)}
+                className={`w-full flex items-center justify-between text-left ${hasExpandableContent ? 'cursor-pointer group' : 'cursor-default'}`}
+                title={hasExpandableContent ? (isVerseExpanded ? 'Hide Scripture Verse' : 'Reveal Scripture Verse') : undefined}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <BookOpen className="w-3.5 h-3.5 text-[#0b57d0] shrink-0" />
+                  <span className="text-[#5e5e5e] text-[11px] font-medium shrink-0">Scripture Anchor:</span>
+                  <span className="font-bold text-[#0b57d0] truncate group-hover:underline">
+                    {scripture.reference}
+                  </span>
+                </div>
+                {hasExpandableContent && (
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-[#0b57d0] bg-[#e8f0fe] hover:bg-[#d2e3fc] px-2 py-0.5 rounded-full transition-colors shrink-0 ml-2">
+                    <span>{isVerseExpanded ? 'Hide' : 'Reveal'}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isVerseExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+                )}
+              </button>
+
+              {isVerseExpanded && (scripture.fullText || camper.verse_reflection) && (
+                <div className="mt-2.5 pt-2 border-t border-[#e8eaed] text-[11px] text-[#444746] italic leading-relaxed animate-fadeIn">
+                  &ldquo;{scripture.fullText || camper.verse_reflection}&rdquo;
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Pass Footer with Public Profile QR Code & Pass Code */}
         <div className="pt-3 border-t border-[#f1f3f4]">

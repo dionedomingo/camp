@@ -105,6 +105,20 @@ export const translations = {
     'footer.checkIn': 'On-Arrival Fast Check-In',
     'footer.schedule': 'Official Schedule',
     'footer.churches': 'Church Directory',
+
+    // User Profile Right Drawer
+    'drawer.accountTitle': 'Delegate Account',
+    'drawer.myProfile': 'My Profile',
+    'drawer.myProfileDesc': 'View public profile, badge & community posts',
+    'drawer.account': 'Account & Details',
+    'drawer.accountDesc': 'Personal info, church delegation & settings',
+    'drawer.digitalPass': 'Digital Pass',
+    'drawer.digitalPassDesc': 'On-arrival scannable QR badge & bunk info',
+    'drawer.adminPortal': 'Admin Management Portal',
+    'drawer.adminPortalDesc': 'Access registrations, arrivals & print queue',
+    'drawer.logout': 'Sign Out',
+    'drawer.close': 'Close',
+    'drawer.statusVerified': 'Registered Delegate',
   },
 
   tl: {
@@ -196,6 +210,20 @@ export const translations = {
     'footer.checkIn': 'Mabilisang Check-In sa Pagdating',
     'footer.schedule': 'Opisyal na Iskedyul',
     'footer.churches': 'Listahan ng Simbahan',
+
+    // User Profile Right Drawer
+    'drawer.accountTitle': 'Account ng Delegado',
+    'drawer.myProfile': 'Aking Profile',
+    'drawer.myProfileDesc': 'Tingnan ang pampublikong profile, badge at mga post',
+    'drawer.account': 'Account at Detalye',
+    'drawer.accountDesc': 'Personal na impormasyon, delegasyon at setting',
+    'drawer.digitalPass': 'Digital Pass',
+    'drawer.digitalPassDesc': 'Mabilisang scannable QR badge sa pagdating',
+    'drawer.adminPortal': 'Admin Management Portal',
+    'drawer.adminPortalDesc': 'Pangasiwaan ang rehistrasyon, pagdating at ID prints',
+    'drawer.logout': 'Mag-Sign Out',
+    'drawer.close': 'Isara',
+    'drawer.statusVerified': 'Rehistradong Delegado',
   },
 
   ilo: {
@@ -287,6 +315,20 @@ export const translations = {
     'footer.checkIn': 'Napartak a Check-In iti Idadanon',
     'footer.schedule': 'Opisial nga Iskedyul',
     'footer.churches': 'Listaan ti Simbaan',
+
+    // User Profile Right Drawer
+    'drawer.accountTitle': 'Account ti Delegado',
+    'drawer.myProfile': 'Ti Profile-ko',
+    'drawer.myProfileDesc': 'Kitaen ti publiko a profile, badge ken posts',
+    'drawer.account': 'Account ken Detalye',
+    'drawer.accountDesc': 'Personal nga impormasion, delegasion ken urnos',
+    'drawer.digitalPass': 'Digital a Pass',
+    'drawer.digitalPassDesc': 'QR badge para iti napartak a panag-check in',
+    'drawer.adminPortal': 'Portal ti Panangidaulo (Admin)',
+    'drawer.adminPortalDesc': 'Urnosen dagiti rehistrasyon, idadanon ken ID prints',
+    'drawer.logout': 'Ag-Sign Out',
+    'drawer.close': 'Irikep',
+    'drawer.statusVerified': 'Rehistrado a Delegado',
   },
 };
 

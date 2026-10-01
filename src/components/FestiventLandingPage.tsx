@@ -10,10 +10,11 @@ import {
   X,
   Building2
 } from 'lucide-react';
-import type { Church, RegistrationStats, CampEvent } from '../types';
+import type { Church, RegistrationStats, CampEvent, CamperRegistration, AdminUser } from '../types';
 import { formatEventDateRange } from '../lib/utils';
 import { useLanguage } from '../lib/i18n';
 import { LanguageSelector } from './LanguageSelector';
+import { UserRightDrawer } from './UserRightDrawer';
 
 interface Speaker {
   id: string;
@@ -61,8 +62,6 @@ const SPEAKERS_DATA: Speaker[] = [
     bio: 'Pioneering church planter and spiritual father overseeing over 50 congregations across Northern Luzon and beyond.',
     timeSlot: 'Opening Night • July 21, 7:00 PM',
   }
-
-
 ];
 
 interface FestiventLandingPageProps {
@@ -74,6 +73,14 @@ interface FestiventLandingPageProps {
   onNavigateToChurches: () => void;
   onOpenActivation: () => void;
   onOpenLogin?: () => void;
+  currentCamper?: CamperRegistration | null;
+  currentUser?: AdminUser | null;
+  onSignOut?: () => void;
+  onViewCamperProfile?: (camperId: string) => void;
+  onOpenDigitalPass?: () => void;
+  onOpenAccount?: () => void;
+  onNavigateToAdmin?: () => void;
+  onOpenUserDrawer?: () => void;
 }
 
 export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
@@ -85,8 +92,17 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
   onNavigateToChurches,
   onOpenActivation,
   onOpenLogin,
+  currentCamper,
+  currentUser,
+  onSignOut,
+  onViewCamperProfile,
+  onOpenDigitalPass,
+  onOpenAccount,
+  onNavigateToAdmin,
+  onOpenUserDrawer,
 }) => {
   const { t } = useLanguage();
+  const [isUserDrawerOpen, setIsUserDrawerOpen] = useState(false);
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -195,12 +211,48 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
             <span className={`font-black uppercase tracking-widest text-white transition-all ${isScrolled ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl drop-shadow-md'}`}>VLC 2027</span>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
-            <button onClick={onNavigateToSchedule} className="px-5 sm:px-8 py-2.5 sm:py-3 rounded-full font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-xs sm:text-sm uppercase tracking-wider cursor-pointer">
-              Program
+            <button onClick={onNavigateToSchedule} className="px-5 sm:px-7 py-2 sm:py-2.5 rounded-full font-bold text-white bg-white/10 hover:bg-white/20 border border-white/25 backdrop-blur-md transition-all text-xs sm:text-sm uppercase tracking-wider cursor-pointer">
+              {t('nav.schedule')}
             </button>
-            <button onClick={onOpenLogin} className="px-5 sm:px-8 py-2.5 sm:py-3 rounded-full font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all text-xs sm:text-sm uppercase tracking-wider cursor-pointer">
-              Login
-            </button>
+            {(currentCamper || currentUser) ? (
+              <button
+                onClick={onOpenUserDrawer || (() => setIsUserDrawerOpen(true))}
+                title={t('drawer.accountTitle')}
+                aria-label={t('drawer.accountTitle')}
+                className="flex items-center gap-2 p-1 sm:pl-1.5 sm:pr-3 sm:py-1 rounded-full bg-slate-900/80 hover:bg-slate-800/90 border border-blue-500/50 hover:border-blue-400 shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+              >
+                <div className="relative shrink-0">
+                  {currentCamper?.selfie_url || currentUser?.selfie_url ? (
+                    <img
+                      src={currentCamper?.selfie_url || currentUser?.selfie_url || ''}
+                      alt={currentCamper?.nickname || currentUser?.name || 'Profile'}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover ring-2 ring-blue-500"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center font-black text-xs ring-2 ring-blue-500/60 shadow-md">
+                      {(currentCamper?.nickname || currentUser?.name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  {/* Active online dot */}
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-950 rounded-full" />
+                </div>
+                <div className="hidden sm:flex flex-col text-left">
+                  <span className="text-xs font-bold text-white group-hover:text-blue-300 transition-colors leading-none truncate max-w-[110px]">
+                    {currentCamper?.nickname || currentUser?.name || 'Delegate'}
+                  </span>
+                  <span className="text-[10px] text-blue-400 font-semibold leading-tight capitalize">
+                    {currentUser?.role || currentCamper?.role || 'Camper'}
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="px-5 sm:px-8 py-2 sm:py-2.5 rounded-full font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all text-xs sm:text-sm uppercase tracking-wider cursor-pointer"
+              >
+                {t('nav.signIn')}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -661,6 +713,27 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* RIGHT DRAWER FOR USER OPTIONS (Fallback if not handled by root App) */}
+      {!onOpenUserDrawer && (
+        <UserRightDrawer
+          isOpen={isUserDrawerOpen}
+          onClose={() => setIsUserDrawerOpen(false)}
+          camper={currentCamper}
+          adminUser={currentUser}
+          onViewProfile={() => {
+            if (currentCamper?.id && onViewCamperProfile) {
+              onViewCamperProfile(currentCamper.id);
+            } else if (onOpenAccount) {
+              onOpenAccount();
+            }
+          }}
+          onOpenAccount={() => onOpenAccount?.()}
+          onOpenDigitalPass={() => onOpenDigitalPass?.()}
+          onSignOut={() => onSignOut?.()}
+          onOpenAdmin={() => onNavigateToAdmin?.()}
+        />
       )}
     </div>
   );

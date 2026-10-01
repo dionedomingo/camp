@@ -44,6 +44,8 @@ import { MediaUploadModal } from './media/MediaUploadModal';
 import { StoryViewerModal } from './media/StoryViewerModal';
 import { PostDetailModal } from './media/PostDetailModal';
 
+export type CamperHubTab = 'pass' | 'events' | 'schedule' | 'profile' | 'media' | 'details';
+
 interface CamperHubModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,6 +54,7 @@ interface CamperHubModalProps {
   onInviteFriend: () => void;
   onProfileUpdated?: (updated: CamperRegistration) => void;
   onNavigateToSchedule?: () => void;
+  initialTab?: CamperHubTab;
 }
 
 export const CamperHubModal: FC<CamperHubModalProps> = ({
@@ -62,8 +65,15 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
   onInviteFriend,
   onProfileUpdated,
   onNavigateToSchedule,
+  initialTab = 'pass',
 }) => {
-  const [activeTab, setActiveTab] = useState<'pass' | 'events' | 'schedule' | 'profile' | 'media' | 'details'>('pass');
+  const [activeTab, setActiveTab] = useState<CamperHubTab>(initialTab);
+
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailStatusMsg, setEmailStatusMsg] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<EventScheduleItem[]>([]);

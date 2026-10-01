@@ -174,9 +174,9 @@ export const Header: FC<HeaderProps> = ({
           {/* Logged in as Admin / Staff */}
           {isAdminAuthenticated ? (
             <button
-              onClick={onSignInClick}
-              title={`Admin Portal (${currentUser?.name || 'Alexius'})`}
-              aria-label="Admin Portal"
+              onClick={onCamperClick || onSignInClick}
+              title={`User Account (${currentUser?.name || 'Admin'})`}
+              aria-label="User Account"
               className={`flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full transition-all cursor-pointer shadow-xs ${activeTab === 'admin'
                 ? 'bg-zinc-900 text-white'
                 : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200'
