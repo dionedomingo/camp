@@ -826,14 +826,6 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                             <span>Lyrics &amp; Video</span>
                           </span>
                         )}
-                        {isOffline && (
-                          <span
-                            title="Cached for offline camp listening"
-                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          >
-                            Offline Ready
-                          </span>
-                        )}
                       </div>
                       <p className="text-xs text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
                         <span>{track.artist}</span>
