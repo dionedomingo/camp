@@ -1,6 +1,5 @@
 import type { FC } from 'react';
 import {
-  User,
   ShieldCheck,
   Sparkles,
   CheckCircle2,
@@ -8,7 +7,8 @@ import {
   Building2,
   Calendar,
   Flame,
-  Home
+  Home,
+  LogIn
 } from 'lucide-react';
 import type { AdminUser, CamperRegistration } from '../types';
 import { useLanguage } from '../lib/i18n';
@@ -235,12 +235,11 @@ export const Header: FC<HeaderProps> = ({
             /* Not logged in: Single Sign-in Button */
             <button
               onClick={onSignInClick}
-              title="Sign In to VLC 2027"
-              aria-label="Sign In"
-              className="flex items-center gap-2 p-2 sm:px-3.5 sm:py-1.5 rounded-full bg-zinc-100 text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900 transition-all cursor-pointer"
+              title={t('nav.signIn')}
+              aria-label={t('nav.signIn')}
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-100 text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900 transition-all cursor-pointer border border-zinc-200/80 shadow-2xs"
             >
-              <User className="w-4 h-4" />
-              <span className="text-xs font-semibold hidden sm:inline">{t('nav.signIn')}</span>
+              <LogIn className="w-4 h-4" />
             </button>
           )}
         </div>
