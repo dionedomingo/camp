@@ -2939,16 +2939,17 @@ class CampApiService {
   /**
    * Update an existing track metadata
    */
-  async updateMusicTrack(id: string, updates: Partial<MusicTrack>): Promise<{
+  async updateMusicTrack(id: string, updates: Partial<MusicTrack> | FormData): Promise<{
     success: boolean;
     track?: MusicTrack;
     error?: string;
   }> {
     try {
+      const isFormData = typeof FormData !== 'undefined' && updates instanceof FormData;
       const res = await fetch(`/api/music/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+        body: isFormData ? updates : JSON.stringify(updates),
       });
       const data = await res.json() as any;
       return data;

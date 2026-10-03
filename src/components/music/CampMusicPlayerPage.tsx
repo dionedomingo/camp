@@ -1,4 +1,4 @@
-import { useState, useMemo, type FC } from 'react';
+import { useState, useMemo, useRef, type FC } from 'react';
 import {
   Play,
   Pause,
@@ -109,8 +109,13 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   const [editLyrics, setEditLyrics] = useState('');
   const [editSpotifyUrl, setEditSpotifyUrl] = useState('');
   const [editYoutubeUrl, setEditYoutubeUrl] = useState('');
+  const [editCoverArtUrl, setEditCoverArtUrl] = useState('');
+  const [editCoverFile, setEditCoverFile] = useState<File | null>(null);
+  const [editCoverPreview, setEditCoverPreview] = useState<string | null>(null);
+  const [editCoverTab, setEditCoverTab] = useState<'upload' | 'url'>('upload');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const editCoverInputRef = useRef<HTMLInputElement>(null);
 
   // Upload Form state (Admin)
   const [uploadTitle, setUploadTitle] = useState('');
@@ -223,7 +228,35 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
     setEditLyrics(track.lyrics || '');
     setEditSpotifyUrl(track.spotify_url || '');
     setEditYoutubeUrl(track.youtube_url || '');
+    setEditCoverArtUrl(track.cover_art_url || '');
+    setEditCoverFile(null);
+    setEditCoverPreview(track.cover_art_url || null);
+    setEditCoverTab(track.cover_art_url && !track.cover_art_url.startsWith('/api/media/') ? 'url' : 'upload');
     setEditError(null);
+  };
+
+  // Handle cover art file selection in edit modal
+  const handleEditCoverFileChange = (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setEditError('Please select a valid image file (JPEG, PNG, WebP).');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setEditError('Cover art size exceeds 10MB limit.');
+      return;
+    }
+    setEditError(null);
+    setEditCoverFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setEditCoverPreview(objectUrl);
+  };
+
+  // Remove cover art
+  const handleRemoveEditCover = () => {
+    setEditCoverFile(null);
+    setEditCoverPreview(null);
+    setEditCoverArtUrl('');
   };
 
   // Save Edit Track
@@ -235,15 +268,25 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
       setIsSavingEdit(true);
       setEditError(null);
 
-      const res = await apiService.updateMusicTrack(editingTrack.id, {
-        title: editTitle.trim(),
-        artist: editArtist.trim(),
-        album: editAlbum.trim(),
-        category: editCategory,
-        lyrics: editLyrics.trim(),
-        spotify_url: editSpotifyUrl.trim(),
-        youtube_url: editYoutubeUrl.trim(),
-      });
+      const formData = new FormData();
+      formData.append('title', editTitle.trim());
+      formData.append('artist', editArtist.trim() || 'VLC Worship Team');
+      formData.append('album', editAlbum.trim() || 'VLC 2027 Worship');
+      formData.append('category', editCategory);
+      formData.append('lyrics', editLyrics.trim());
+      formData.append('spotify_url', editSpotifyUrl.trim());
+      formData.append('youtube_url', editYoutubeUrl.trim());
+
+      if (editCoverFile) {
+        formData.append('cover_file', editCoverFile);
+      } else if (editCoverPreview === null) {
+        // Explicitly removed
+        formData.append('cover_art_url', '');
+      } else if (editCoverTab === 'url') {
+        formData.append('cover_art_url', editCoverArtUrl.trim());
+      }
+
+      const res = await apiService.updateMusicTrack(editingTrack.id, formData);
 
       if (res.success) {
         await refreshTracks();
@@ -1259,6 +1302,121 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
             )}
 
             <form onSubmit={handleSaveEditTrack} className="mt-5 space-y-4">
+              {/* Song Cover Artwork Modifier */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-300 mb-2">
+                  Song Cover Artwork
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-4 p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                  {/* Artwork Preview Box */}
+                  <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-zinc-900 border border-white/15 shrink-0 shadow-md group">
+                    {editCoverPreview ? (
+                      <img
+                        src={editCoverPreview}
+                        alt="Cover Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 bg-zinc-900/80">
+                        <Music className="w-8 h-8 opacity-40 mb-1" />
+                        <span className="text-[10px] text-zinc-500">No Artwork</span>
+                      </div>
+                    )}
+
+                    {/* Quick remove button if artwork is present */}
+                    {editCoverPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveEditCover}
+                        title="Remove artwork"
+                        className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 hover:bg-rose-600 text-white/80 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Artwork Action Controls */}
+                  <div className="flex-1 w-full space-y-2.5">
+                    {/* Mode Toggle: Upload Image File vs Direct Image URL */}
+                    <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl w-fit border border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setEditCoverTab('upload')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          editCoverTab === 'upload'
+                            ? 'bg-[#1db954] text-black shadow-xs'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Upload Image
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditCoverTab('url')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          editCoverTab === 'url'
+                            ? 'bg-[#1db954] text-black shadow-xs'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Image URL
+                      </button>
+                    </div>
+
+                    {editCoverTab === 'upload' ? (
+                      <div className="space-y-1.5">
+                        <input
+                          ref={editCoverInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleEditCoverFileChange(e.target.files?.[0] || null)}
+                          className="hidden"
+                        />
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => editCoverInputRef.current?.click()}
+                            className="tap-pill px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs flex items-center gap-1.5 border border-white/10 cursor-pointer transition-colors"
+                          >
+                            <Upload className="w-3.5 h-3.5 text-[#1db954]" />
+                            <span>{editCoverFile ? 'Change Photo' : 'Choose New Photo'}</span>
+                          </button>
+                          {editCoverFile && (
+                            <span className="text-[11px] text-[#1db954] truncate max-w-[160px] font-mono">
+                              {editCoverFile.name}
+                            </span>
+                          )}
+                          {editCoverPreview && !editCoverFile && (
+                            <span className="text-[11px] text-zinc-400">Current track artwork</span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-zinc-500">
+                          Supports PNG, JPG, or WebP up to 10MB. 1:1 square recommended.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <input
+                          type="url"
+                          placeholder="https://images.unsplash.com/... or direct image link"
+                          value={editCoverArtUrl}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditCoverArtUrl(val);
+                            setEditCoverFile(null);
+                            setEditCoverPreview(val.trim() || null);
+                          }}
+                          className="w-full px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-[#1db954]"
+                        />
+                        <p className="text-[10px] text-zinc-500">
+                          Paste a direct web image URL to update album artwork.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-bold text-zinc-300 mb-1">
                   Song Title <span className="text-rose-400">*</span>
