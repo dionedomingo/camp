@@ -1,4 +1,4 @@
-import { useState, useRef, type FC } from 'react';
+import { useState, useRef, useEffect, type FC } from 'react';
 import { 
   X, 
   Upload, 
@@ -6,10 +6,12 @@ import {
   Sparkles, 
   Loader2, 
   CheckCircle2, 
-  AlertCircle 
+  AlertCircle,
+  Camera
 } from 'lucide-react';
 import type { CamperRegistration, CommunityPost, CommunityStory } from '../../types';
 import { apiService } from '../../services/api';
+import { FullScreenCamera } from './FullScreenCamera';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -19,6 +21,7 @@ interface MediaUploadModalProps {
   onClose: () => void;
   currentCamper: CamperRegistration | null;
   defaultType?: 'post' | 'story';
+  initialLaunchCamera?: boolean;
   onPostCreated?: (post: CommunityPost) => void;
   onStoryCreated?: (story: CommunityStory) => void;
 }
@@ -28,6 +31,7 @@ export const MediaUploadModal: FC<MediaUploadModalProps> = ({
   onClose,
   currentCamper,
   defaultType = 'post',
+  initialLaunchCamera = false,
   onPostCreated,
   onStoryCreated,
 }) => {
@@ -37,7 +41,14 @@ export const MediaUploadModal: FC<MediaUploadModalProps> = ({
   const [caption, setCaption] = useState('');
   const [uploadStep, setUploadStep] = useState<'idle' | 'presigning' | 'uploading' | 'confirming' | 'done'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isFullScreenCameraOpen, setIsFullScreenCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen && initialLaunchCamera && !selectedFile) {
+      setIsFullScreenCameraOpen(true);
+    }
+  }, [isOpen, initialLaunchCamera]);
 
   if (!isOpen) return null;
 
@@ -79,6 +90,7 @@ export const MediaUploadModal: FC<MediaUploadModalProps> = ({
     setCaption('');
     setUploadStep('idle');
     setErrorMessage(null);
+    setIsFullScreenCameraOpen(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -264,13 +276,22 @@ export const MediaUploadModal: FC<MediaUploadModalProps> = ({
                 className={`w-full object-contain ${mediaType === 'story' ? 'max-h-[300px]' : 'max-h-[260px]'}`}
               />
               {!isSubmitting && (
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 sm:gap-3 p-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsFullScreenCameraOpen(true)}
+                    className="tap-pill px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Snap Again</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="tap-pill px-3 py-1.5 bg-white/90 hover:bg-white text-zinc-900 text-xs font-bold rounded-xl shadow-md cursor-pointer"
+                    className="tap-pill px-3 py-1.5 bg-white/90 hover:bg-white text-zinc-900 text-xs font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
                   >
-                    Change Image
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Change File</span>
                   </button>
                   <button
                     type="button"
@@ -283,23 +304,51 @@ export const MediaUploadModal: FC<MediaUploadModalProps> = ({
               )}
             </div>
           ) : (
-            <div
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-zinc-300 hover:border-blue-500 bg-zinc-50/70 hover:bg-blue-50/30 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-white border border-zinc-200 text-blue-600 flex items-center justify-center shadow-xs mb-3">
-                <Upload className="w-6 h-6" />
+            <div className="space-y-2.5">
+              {/* PRIMARY OPTION: Full-Screen Camera Snap */}
+              <button
+                type="button"
+                onClick={() => setIsFullScreenCameraOpen(true)}
+                className="w-full p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 flex items-center justify-between transition-all cursor-pointer group hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3.5 text-left">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center group-hover:scale-105 group-hover:rotate-3 transition-transform shrink-0">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-sm block leading-tight">
+                      Take Photo with Camera
+                    </span>
+                    <span className="text-xs text-blue-100 font-normal mt-0.5 block">
+                      Launch full-screen camera to capture camp right now
+                    </span>
+                  </div>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-white/20 text-xs font-bold shrink-0 hidden xs:inline-flex items-center gap-1">
+                  <span>Open Camera</span>
+                  <span className="text-sm">→</span>
+                </div>
+              </button>
+
+              {/* SECONDARY OPTION: Device File Upload */}
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-zinc-200 hover:border-zinc-300 bg-zinc-50/70 hover:bg-zinc-100/70 rounded-2xl p-3.5 sm:p-4 flex items-center justify-center gap-3 text-center cursor-pointer transition-colors"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white border border-zinc-200 text-zinc-500 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="font-semibold text-xs text-zinc-700 leading-tight">
+                    Or upload from device / gallery
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                    Click to browse files or drag &amp; drop (JPEG, PNG, WebP up to 10MB)
+                  </p>
+                </div>
               </div>
-              <p className="font-bold text-sm text-zinc-800">
-                Click or drag &amp; drop your photo here
-              </p>
-              <p className="text-xs text-zinc-500 mt-1">
-                {mediaType === 'story'
-                  ? 'Vertical/portrait media recommended (JPEG, PNG, WebP up to 10MB)'
-                  : 'Square or landscape photo (JPEG, PNG, WebP up to 10MB)'}
-              </p>
             </div>
           )}
 
@@ -379,6 +428,20 @@ export const MediaUploadModal: FC<MediaUploadModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Full-Screen Camera Snap Overlay */}
+      <FullScreenCamera
+        isOpen={isFullScreenCameraOpen}
+        onClose={() => setIsFullScreenCameraOpen(false)}
+        onCapture={(file) => {
+          handleFileSelect(file);
+          setIsFullScreenCameraOpen(false);
+        }}
+        onUploadSelect={(file) => {
+          handleFileSelect(file);
+          setIsFullScreenCameraOpen(false);
+        }}
+      />
     </div>
   );
 };

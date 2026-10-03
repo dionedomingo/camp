@@ -6,7 +6,9 @@ import {
   Loader2, 
   Flame, 
   RefreshCw,
-  HeartHandshake
+  HeartHandshake,
+  Camera,
+  Upload
 } from 'lucide-react';
 import type { 
   CommunityPost, 
@@ -68,6 +70,7 @@ export const CommunityFeed: FC<CommunityFeedProps> = ({
   // Modals state for media
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [uploadDefaultType, setUploadDefaultType] = useState<'post' | 'story'>('post');
+  const [launchCameraInitially, setLaunchCameraInitially] = useState(false);
   const [activeStoryGroup, setActiveStoryGroup] = useState<CommunityStory[] | null>(null);
   const [storyInitialIndex, setStoryInitialIndex] = useState(0);
   const [activePost, setActivePost] = useState<CommunityPost | null>(null);
@@ -188,13 +191,14 @@ export const CommunityFeed: FC<CommunityFeedProps> = ({
     }
   };
 
-  const handleOpenUpload = (type: 'post' | 'story') => {
+  const handleOpenUpload = (type: 'post' | 'story', launchCamera: boolean = false) => {
     if (!currentCamper) {
       if (onOpenLogin) onOpenLogin();
       else alert('Please sign in with your Camp Pass to upload photos!');
       return;
     }
     setUploadDefaultType(type);
+    setLaunchCameraInitially(launchCamera);
     setIsUploadOpen(true);
   };
 
@@ -451,7 +455,7 @@ export const CommunityFeed: FC<CommunityFeedProps> = ({
             camperStories={camperStories}
             currentCamper={currentCamper}
             onOpenStory={handleOpenStories}
-            onAddStoryClick={() => handleOpenUpload('story')}
+            onAddStoryClick={() => handleOpenUpload('story', true)}
           />
 
           {/* Quick Action Prompt Box */}
@@ -473,7 +477,7 @@ export const CommunityFeed: FC<CommunityFeedProps> = ({
 
               <button
                 type="button"
-                onClick={() => handleOpenUpload('post')}
+                onClick={() => handleOpenUpload('post', false)}
                 className="flex-1 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 rounded-2xl px-4 py-2.5 text-xs text-zinc-500 font-medium text-left transition-colors cursor-pointer"
               >
                 Share a camp moment, photo, or verse reflection...
@@ -482,15 +486,24 @@ export const CommunityFeed: FC<CommunityFeedProps> = ({
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
-                  onClick={() => handleOpenUpload('post')}
-                  title="Upload standard post"
-                  className="p-2 text-zinc-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
+                  onClick={() => handleOpenUpload('post', true)}
+                  title="Snap photo with camera in full screen"
+                  className="px-2.5 sm:px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-blue-200/60 transition-colors cursor-pointer shadow-2xs"
                 >
-                  <ImageIcon className="w-4 h-4" />
+                  <Camera className="w-4 h-4 text-blue-600" />
+                  <span className="hidden xs:inline">Snap</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleOpenUpload('story')}
+                  onClick={() => handleOpenUpload('post', false)}
+                  title="Upload from device"
+                  className="p-2 text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenUpload('story', true)}
                   title="Add vertical highlight story"
                   className="p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-colors cursor-pointer"
                 >
@@ -776,9 +789,13 @@ export const CommunityFeed: FC<CommunityFeedProps> = ({
       {/* Pre-signed R2 Media Upload Modal */}
       <MediaUploadModal
         isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
+        onClose={() => {
+          setIsUploadOpen(false);
+          setLaunchCameraInitially(false);
+        }}
         currentCamper={currentCamper}
         defaultType={uploadDefaultType}
+        initialLaunchCamera={launchCameraInitially}
         onPostCreated={handlePostCreated}
         onStoryCreated={handleStoryCreated}
       />
