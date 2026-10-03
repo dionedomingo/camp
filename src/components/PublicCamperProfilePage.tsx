@@ -25,6 +25,7 @@ import type {
   AdminUser,
 } from '../types';
 import { apiService } from '../services/api';
+import { getBaseUrl } from '../lib/utils';
 import { StoryViewerModal } from './media/StoryViewerModal';
 import { PostDetailModal } from './media/PostDetailModal';
 import { MediaUploadModal } from './media/MediaUploadModal';
@@ -128,7 +129,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
 
   const handleCopyLink = () => {
     if (!camperId) return;
-    const url = `${window.location.origin}/camper/${camperId}`;
+    const url = `${getBaseUrl()}/camper/${camperId}`;
     navigator.clipboard.writeText(url);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
@@ -136,7 +137,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
 
   const handleShare = async () => {
     if (!camperId || !camper) return;
-    const url = `${window.location.origin}/camper/${camperId}`;
+    const url = `${getBaseUrl()}/camper/${camperId}`;
 
     if (navigator.share) {
       try {
@@ -500,7 +501,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
               {/* Profile QR Code & Pass */}
               {(() => {
                 const passCode = camper.activation_code || camper.id || 'VLC-DELEGATE';
-                const profileUrl = `${window.location.origin}/camper/${camper.id}`;
+                const profileUrl = `${getBaseUrl()}/camper/${camper.id}`;
                 return (
                   <div className="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/90 shadow-xs space-y-4">
                     <div className="flex items-center justify-between">

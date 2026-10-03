@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { MediaItem, CampEvent } from '../types';
 import { apiService } from '../services/api';
+import { getBaseUrl } from '../lib/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -165,7 +166,7 @@ export const AdminMediaManager: FC<AdminMediaManagerProps> = ({
   };
 
   const handleCopyUrl = (url: string, key: string) => {
-    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${getBaseUrl()}${url}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2500);

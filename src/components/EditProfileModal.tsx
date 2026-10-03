@@ -28,6 +28,7 @@ import { Badge } from './ui/badge';
 import type { CamperRegistration } from '../types';
 import { SelfieCapture } from './SelfieCapture';
 import { apiService } from '../services/api';
+import { getBaseUrl } from '../lib/utils';
 
 const MINISTRIES = [
   'Praise & Worship',
@@ -197,7 +198,7 @@ export const EditProfileForm: FC<EditProfileFormProps> = ({
       {(() => {
         const passCode = camper.activation_code || 'VLC-DELEGATE';
         const camperId = camper.id || '';
-        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://summer-camp-vlc2027.pages.dev';
+        const origin = getBaseUrl();
         const profileUrl = camperId ? `${origin}/camper/${camperId}` : origin;
 
         return (

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { CamperRegistration, CamperRole } from '../types';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
+import { getBaseUrl } from '../lib/utils';
 
 function parseScripture(favoriteVerse?: string, verseReflection?: string) {
   if (!favoriteVerse) return { reference: 'Isaiah 60:1', fullText: verseReflection || '' };
@@ -72,7 +73,7 @@ export const CampPassCard: FC<CampPassCardProps> = ({ camper, eventName, onInvit
 
   // Construct camper public profile URL for QR code
   const camperId = camper.id || '';
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://summer-camp-vlc2027.pages.dev';
+  const origin = getBaseUrl();
   const profileUrl = camperId ? `${origin}/camper/${camperId}` : origin;
 
   const handleCopyCode = () => {

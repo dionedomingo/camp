@@ -12,7 +12,7 @@ export interface QRCodeResult {
 export async function generateCamperQRCode(
   activationCode: string,
   activationToken: string | undefined,
-  baseUrl: string = 'https://summer-camp-vlc2027.pages.dev'
+  baseUrl: string = 'https://camp.pcciministries.com'
 ): Promise<QRCodeResult> {
   const cleanBase = baseUrl.replace(/\/$/, '');
   const tokenParam = activationToken ? `&activate_token=${encodeURIComponent(activationToken)}` : '';

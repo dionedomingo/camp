@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { Church } from '../types';
 import { apiService } from '../services/api';
+import { getBaseUrl } from '../lib/utils';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -91,7 +92,7 @@ export const AdminChurchManager: FC<AdminChurchManagerProps> = ({
   const totalRegistered = churches.reduce((sum, c) => sum + (c.registered_count || 0), 0);
 
   const handleCopyLink = (slug: string) => {
-    const url = `${window.location.origin}${window.location.pathname}?church=${slug}`;
+    const url = `${getBaseUrl()}/join?church=${encodeURIComponent(slug)}`;
     navigator.clipboard.writeText(url);
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2500);

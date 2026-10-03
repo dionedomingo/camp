@@ -40,7 +40,12 @@ export async function dispatchCamperPassportEmail(options: {
   }
 
   // 2. Generate Base64 QR code and compile Passport Email HTML
-  const baseUrl = origin || env.BASE_URL || 'https://summer-camp-vlc2027.pages.dev';
+  const defaultBaseUrl = 'https://camp.pcciministries.com';
+  const baseUrl = (env.BASE_URL && !env.BASE_URL.includes('pages.dev'))
+    ? env.BASE_URL
+    : (origin && !origin.includes('pages.dev') && !origin.includes('localhost'))
+      ? origin
+      : defaultBaseUrl;
   const qr = await generateCamperQRCode(camper.activation_code, camper.activation_token, baseUrl);
   const content = renderCamperPassportEmail(camper, qr, {
     campName: env.CAMP_NAME,
@@ -264,7 +269,12 @@ export async function dispatchPasswordResetEmail(options: {
   const deliveryId = 'del_rst_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
   const idempotencyKey = `reset_${camper.id}_${Date.now()}`;
 
-  const baseUrl = origin || env.BASE_URL || 'https://summer-camp-vlc2027.pages.dev';
+  const defaultBaseUrl = 'https://camp.pcciministries.com';
+  const baseUrl = (env.BASE_URL && !env.BASE_URL.includes('pages.dev'))
+    ? env.BASE_URL
+    : (origin && !origin.includes('pages.dev') && !origin.includes('localhost'))
+      ? origin
+      : defaultBaseUrl;
   const resetUrl = `${baseUrl.replace(/\/$/, '')}/?reset_token=${encodeURIComponent(resetToken)}`;
 
   const content = renderPasswordResetEmail({

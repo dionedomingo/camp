@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { CommunityPost, AllowedReactionEmoji, CamperRegistration } from '../../types';
 import { apiService } from '../../services/api';
+import { getBaseUrl } from '../../lib/utils';
 
 const EMOJI_WHITELIST: AllowedReactionEmoji[] = ['👍', '❤️', '🔥', '⛺', '🌲', '🎉'];
 
@@ -79,7 +80,7 @@ export const PostCard: FC<PostCardProps> = ({
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/camper/${post.camper_id}`;
+    const url = `${getBaseUrl()}/camper/${post.camper_id}`;
     if (navigator.share) {
       navigator.share({
         title: `${post.camper?.nickname}'s Camp Post`,

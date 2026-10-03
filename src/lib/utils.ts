@@ -195,3 +195,23 @@ export function getRegistrationStatus(
   };
 }
 
+/**
+ * Official canonical production domain for VLC 2027
+ */
+export const OFFICIAL_CAMP_DOMAIN = 'https://camp.pcciministries.com';
+
+/**
+ * Returns the canonical base URL for public links, QR codes, and sharing.
+ * Preserves localhost / 127.0.0.1 for local developer environments,
+ * and defaults to https://camp.pcciministries.com for production and preview builds.
+ */
+export function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return window.location.origin;
+    }
+  }
+  return OFFICIAL_CAMP_DOMAIN;
+}
+

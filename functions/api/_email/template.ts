@@ -349,6 +349,9 @@ export function renderCamperPassportEmail(
             <p style="margin: 0 0 6px 0; color: #94a3b8; font-weight: 600;">
               Vision &amp; Leadership Camp (VLC 2027) • PCCI Youth &amp; Delegates Committee
             </p>
+            <p style="margin: 0 0 6px 0;">
+              <a href="https://camp.pcciministries.com" style="color: #60a5fa; text-decoration: underline; font-weight: 600;">camp.pcciministries.com</a>
+            </p>
             <p style="margin: 0;">
               This is an automated confirmation sent to ${escapeHtml(camper.email)}. If you have questions or delegation adjustments, please contact your local pastor or the Camp Secretariat.
             </p>
@@ -401,6 +404,7 @@ We look forward to an anointed time of worship and leadership fellowship!
 --
 VLC 2027 Camp Secretariat
 Pentecostal Churches of Christ, Inc.
+https://camp.pcciministries.com
 `.trim();
 
   return { subject, html, text };
@@ -458,7 +462,8 @@ export function renderPasswordResetEmail(data: {
     </div>
 
     <div style="padding: 20px 24px; background-color: #0f172a; text-align: center; color: #94a3b8; font-size: 11px;">
-      <p style="margin: 0;">Pentecostal Churches of Christ, Inc. &bull; VLC 2027 Secretariat</p>
+      <p style="margin: 0 0 4px 0;">Pentecostal Churches of Christ, Inc. &bull; VLC 2027 Secretariat</p>
+      <p style="margin: 0;"><a href="https://camp.pcciministries.com" style="color: #60a5fa; text-decoration: underline;">camp.pcciministries.com</a></p>
     </div>
   </div>
 </body>
@@ -482,6 +487,7 @@ This link is valid for ${minutes} minutes. If you did not request this reset, yo
 --
 VLC 2027 Secretariat
 Pentecostal Churches of Christ, Inc.
+https://camp.pcciministries.com
 `.trim();
 
   return { subject, html, text };

@@ -12,6 +12,7 @@ import {
 import confetti from 'canvas-confetti';
 import type { CamperRegistration } from '../types';
 import { apiService } from '../services/api';
+import { getBaseUrl } from '../lib/utils';
 
 interface InviteFriendModalProps {
   isOpen: boolean;
@@ -31,7 +32,8 @@ export const InviteFriendModal: FC<InviteFriendModalProps> = ({
   const [inviteText, setInviteText] = useState<string>('');
 
   const churchSlug = camper.church_slug || 'vlc';
-  const inviteUrl = `${window.location.origin}${window.location.pathname}?church=${churchSlug}&ref=${camper.nickname || 'camper'}`;
+  const baseUrl = getBaseUrl();
+  const inviteUrl = `${baseUrl}/?church=${encodeURIComponent(churchSlug)}&ref=${encodeURIComponent(camper.nickname || 'camper')}`;
 
   useEffect(() => {
     if (isOpen) {

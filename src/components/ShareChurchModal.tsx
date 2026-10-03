@@ -14,6 +14,7 @@ import type { Church } from '../types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
+import { getBaseUrl } from '../lib/utils';
 
 interface ShareChurchModalProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export const ShareChurchModal: FC<ShareChurchModalProps> = ({
 
   if (!church) return null;
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vlc2027.pcci.ph';
+  const origin = getBaseUrl();
   const shareUrl = `${origin}/join?church=${church.slug}`;
   const shareTitle = `${church.name} Delegation - VLC 2027`;
   const shareText = `Join our delegation (${church.name}) for the Vision & Leadership Camp (VLC 2027) - Arise & Shine! Register here:`;

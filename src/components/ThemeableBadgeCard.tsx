@@ -13,6 +13,7 @@ import {
   DEFAULT_BADGE_CONFIG 
 } from '../types';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
+import { getBaseUrl } from '../lib/utils';
 
 export interface ThemeableBadgeCardProps {
   camper: CamperRegistration | QueueDelegate;
@@ -49,7 +50,7 @@ export const ThemeableBadgeCard: FC<ThemeableBadgeCardProps> = ({
 
   // Camper Public Profile URL for 2D QR Code
   const camperId = ('camper_id' in camper && camper.camper_id ? camper.camper_id : ('id' in camper ? camper.id : '')) || '';
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://summer-camp-vlc2027.pages.dev';
+  const origin = getBaseUrl();
   const qrUrl = camperId ? `${origin}/camper/${camperId}` : origin;
 
   // Theme-specific styling definitions
