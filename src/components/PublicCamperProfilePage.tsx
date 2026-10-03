@@ -18,6 +18,7 @@ import {
   Play,
   Headphones,
   Music,
+  QrCode,
 } from 'lucide-react';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
 import type {
@@ -33,6 +34,7 @@ import { getBaseUrl } from '../lib/utils';
 import { StoryViewerModal } from './media/StoryViewerModal';
 import { PostDetailModal } from './media/PostDetailModal';
 import { MediaUploadModal } from './media/MediaUploadModal';
+import { DigitalPassModal } from './DigitalPassModal';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 
 interface PublicCamperProfilePageProps {
@@ -74,8 +76,24 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
   const [uploadType, setUploadType] = useState<'post' | 'story'>('post');
   const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null);
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
+  const [isDigitalPassOpen, setIsDigitalPassOpen] = useState(false);
 
-  const isOwner = Boolean(currentCamper && camperId && currentCamper.id === camperId);
+  const isOwner = Boolean(
+    currentCamper &&
+    camperId &&
+    (currentCamper.id === camperId || currentCamper.activation_code === camperId)
+  );
+
+  const isAdmin = Boolean(
+    currentUser ||
+    currentCamper?.is_admin ||
+    currentCamper?.role === 'admin' ||
+    currentCamper?.role === 'staff' ||
+    currentCamper?.role === 'coordinator'
+  );
+
+  // Digital pass credentials & activation code can only be viewed by owner or admin
+  const canViewPassCode = isOwner || isAdmin;
 
   // Global Music Player hook for real-time social listening
   const { currentTrack, isPlaying, playTrackById } = useMusicPlayer();
@@ -117,7 +135,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
     if (!camperId) return;
 
     let isMounted = true;
-    apiService.getCamperProfile(camperId)
+    apiService.getCamperProfile(camperId, currentCamper?.id)
       .then((res) => {
         if (isMounted) {
           if (res.success && res.camper) {
@@ -138,7 +156,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
 
     // Light 30s background poll to refresh live listening status
     const interval = setInterval(() => {
-      apiService.getCamperProfile(camperId).then((res) => {
+      apiService.getCamperProfile(camperId, currentCamper?.id).then((res) => {
         if (isMounted && res.success && res.camper) {
           setCamper((prev) => (prev ? { ...prev, listening_status: res.camper!.listening_status } : res.camper!));
         }
@@ -337,16 +355,24 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
 
             {/* Owner Upload & Account CTAs */}
             {isOwner && (
-              <div className="flex sm:flex-col gap-2 shrink-0">
+              <div className="flex flex-wrap sm:flex-col gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsDigitalPassOpen(true)}
+                  className="tap-pill px-3.5 py-2 rounded-xl bg-[#0b57d0] hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Digital Pass</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     setUploadType('post');
                     setIsUploadOpen(true);
                   }}
-                  className="tap-pill px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                  className="tap-pill px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-50 text-zinc-800 font-bold text-xs flex items-center gap-1.5 border border-zinc-200/80 shadow-xs cursor-pointer transition-colors"
                 >
-                  <PlusCircle className="w-3.5 h-3.5" />
+                  <PlusCircle className="w-3.5 h-3.5 text-blue-600" />
                   <span>New Post</span>
                 </button>
                 <button
@@ -355,9 +381,9 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
                     setUploadType('story');
                     setIsUploadOpen(true);
                   }}
-                  className="tap-pill px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                  className="tap-pill px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1.5 border border-amber-200/80 shadow-xs cursor-pointer transition-colors"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                   <span>Add Story</span>
                 </button>
                 {onNavigateToAccount && (
@@ -526,7 +552,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
                 }`}
             >
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Pass &amp; Details</span>
+              <span>{canViewPassCode ? 'Pass & Details' : 'About & Connect'}</span>
             </button>
           </div>
 
@@ -641,47 +667,121 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
 
               {/* Profile QR Code & Pass */}
               {(() => {
-                const passCode = camper.activation_code || camper.id || 'VLC-DELEGATE';
                 const profileUrl = `${getBaseUrl()}/camper/${camper.id}`;
+
+                if (canViewPassCode) {
+                  // Owner or Admin: Full Scannable Badge & Private Pass Code
+                  const passCode =
+                    camper.activation_code ||
+                    (isOwner && currentCamper?.activation_code) ||
+                    camper.id ||
+                    'VLC-DELEGATE';
+
+                  return (
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/90 shadow-xs space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase font-bold text-zinc-500 tracking-wider flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#0b57d0]" />
+                          <span>Official Digital Pass &amp; Check-In</span>
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                          {isOwner ? 'Your Private Pass' : 'Admin Pass View'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
+                            Activation / Pass Code
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-base font-bold text-zinc-900 tracking-wider">
+                              {passCode}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(passCode);
+                                setIsPassCodeCopied(true);
+                                setTimeout(() => setIsPassCodeCopied(false), 2000);
+                              }}
+                              title="Copy Pass Code"
+                              className="p-1 text-zinc-500 hover:text-zinc-900 rounded-md hover:bg-zinc-100 transition-colors cursor-pointer"
+                            >
+                              {isPassCodeCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-zinc-500 leading-tight">
+                            Keep this pass code handy for Arrival Desk check-in and dining hall meal sessions.
+                          </p>
+
+                          <div className="pt-2 flex flex-wrap items-center gap-2">
+                            {isOwner && (
+                              <button
+                                type="button"
+                                onClick={() => setIsDigitalPassOpen(true)}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b57d0] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl border border-blue-200 transition-colors cursor-pointer"
+                              >
+                                <QrCode className="w-3.5 h-3.5" />
+                                <span>Open Full Digital Pass</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(profileUrl);
+                                setIsProfileUrlCopied(true);
+                                setTimeout(() => setIsProfileUrlCopied(false), 2000);
+                              }}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
+                            >
+                              {isProfileUrlCopied ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span className="text-emerald-700 font-bold">Link Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Link2 className="w-3.5 h-3.5" />
+                                  <span>Copy Public Profile Link</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="p-2 bg-white border border-zinc-200 rounded-2xl shrink-0 shadow-2xs">
+                          <QRCodeCanvas value={profileUrl} size={92} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Public visitor / friend view: Clean Social Connect Card with zero secret credentials
                 return (
-                  <div className="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/90 shadow-xs space-y-4">
+                  <div className="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/90 shadow-xs space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] uppercase font-bold text-zinc-500 tracking-wider flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#0b57d0]" />
-                        <span>Official Profile QR &amp; Pass</span>
+                        <QrCode className="w-3.5 h-3.5 text-[#0b57d0]" />
+                        <span>Connect &amp; Share Profile</span>
                       </span>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">
-                        Camper QR
+                        Public QR
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between gap-4">
                       <div className="space-y-1.5 min-w-0 flex-1">
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
-                          Activation / Pass Code
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-base font-bold text-zinc-900 tracking-wider">
-                            {passCode}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard?.writeText(passCode);
-                              setIsPassCodeCopied(true);
-                              setTimeout(() => setIsPassCodeCopied(false), 2000);
-                            }}
-                            title="Copy Pass Code"
-                            className="p-1 text-zinc-500 hover:text-zinc-900 rounded-md hover:bg-zinc-100 transition-colors cursor-pointer"
-                          >
-                            {isPassCodeCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
+                        <h4 className="text-xs font-bold text-zinc-900">
+                          Connect with {camper.nickname}
+                        </h4>
                         <p className="text-[11px] text-zinc-500 leading-tight">
-                          Scan this QR code with any smartphone camera to open and share this public camper profile.
+                          Scan this QR code with any smartphone camera to open and bookmark {camper.nickname}&apos;s VLC 2027 camp profile.
                         </p>
 
-                        <div className="pt-1">
+                        <div className="pt-2">
                           <button
                             type="button"
                             onClick={() => {
@@ -797,6 +897,15 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
           currentCamper={currentCamper || null}
           onPostDeleted={handlePostDeleted}
           onReactionUpdated={handleReactionUpdated}
+        />
+      )}
+
+      {/* Owner Scannable Digital Pass Modal */}
+      {isOwner && (
+        <DigitalPassModal
+          isOpen={isDigitalPassOpen}
+          onClose={() => setIsDigitalPassOpen(false)}
+          camper={currentCamper || camper}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
 import { saveSelfieToR2 } from '../media/helper';
+import { extractCamperId } from '../_media/auth';
 
 interface Env {
   DB: D1Database;
@@ -93,6 +94,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     delete camper.reset_token;
     delete camper.reset_token_expires_at;
     delete camper.activation_token;
+
+    // Digital pass & activation code is private to the owner and administrators
+    const viewerId = extractCamperId(context.request);
+    const isOwner = Boolean(
+      viewerId &&
+      (viewerId === camper.id || viewerId.toUpperCase() === camper.activation_code?.toUpperCase())
+    );
+
+    if (!code && !isOwner) {
+      delete camper.activation_code;
+    }
 
     return new Response(
       JSON.stringify({ success: true, camper }),

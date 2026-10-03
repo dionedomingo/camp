@@ -1947,9 +1947,16 @@ class CampApiService {
   }
 
   // 17. Retrieve Camper Profile
-  async getCamperProfile(id: string): Promise<{ success: boolean; camper?: CamperRegistration; error?: string }> {
+  async getCamperProfile(id: string, viewerId?: string): Promise<{ success: boolean; camper?: CamperRegistration; error?: string }> {
     try {
-      const res = await fetch(`/api/camper/profile?id=${encodeURIComponent(id)}`);
+      const url = new URL('/api/camper/profile', window.location.origin);
+      url.searchParams.set('id', id);
+      if (viewerId) {
+        url.searchParams.set('viewer_id', viewerId);
+      }
+      const res = await fetch(url.toString(), {
+        headers: viewerId ? { 'x-camper-id': viewerId } : undefined,
+      });
       if (res.ok) {
         const data = (await res.json()) as { success: boolean; camper?: CamperRegistration };
         if (data.camper) {
@@ -1963,6 +1970,12 @@ class CampApiService {
     const campers = this.getLocalCampers();
     const found = campers.find((c) => c.id === id || c.activation_code?.toUpperCase() === id.toUpperCase());
     if (found) {
+      // If caller is not owner, do not leak activation_code
+      if (viewerId && viewerId !== found.id && viewerId.toUpperCase() !== found.activation_code?.toUpperCase()) {
+        const sanitized = { ...found };
+        delete sanitized.activation_code;
+        return { success: true, camper: sanitized };
+      }
       return { success: true, camper: found };
     }
     return { success: false, error: 'Camper profile not found' };
