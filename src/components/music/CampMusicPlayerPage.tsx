@@ -537,7 +537,7 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
       <UpNextQueueDrawer />
 
       {/* Top Sticky Immersive Navigation Header */}
-      <header className="sticky top-0 z-30 w-full px-4 sm:px-8 py-3 bg-[#0b0c10]/85 backdrop-blur-xl border-b border-white/10 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-30 w-full px-3 sm:px-4 lg:px-6 py-2.5 bg-[#0b0c10]/85 backdrop-blur-xl border-b border-white/10 flex items-center justify-between gap-4">
         {/* Left: Minimize Player button with Esc keyboard shortcut */}
         <div className="flex items-center gap-2">
           {onMinimize && (
@@ -611,8 +611,8 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
       </header>
 
       {/* Main Full-Bleed Content Container */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5">
-        <div className="rounded-3xl bg-gradient-to-b from-[#14161c] via-[#0f1014] to-[#0a0b0e] border border-white/10 p-4 sm:p-7 shadow-2xl text-white">
+      <div className="flex-1 w-full px-3 sm:px-4 lg:px-6 py-3">
+        <div className="text-white">
         
         {/* Top Header & Quick Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
