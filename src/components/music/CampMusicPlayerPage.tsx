@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, type FC } from 'react';
+import { useState, useEffect, useMemo, useRef, type FC } from 'react';
 import {
   Play,
   Pause,
@@ -29,7 +29,9 @@ import {
   Download,
   ListMusic,
   Pencil,
-  Loader2
+  Loader2,
+  ChevronDown,
+  Minimize2
 } from 'lucide-react';
 import type { CamperRegistration, AdminUser, MusicTrack, MusicCategory } from '../../types';
 import { apiService } from '../../services/api';
@@ -41,12 +43,17 @@ interface CampMusicPlayerPageProps {
   currentUser: AdminUser | null;
   onOpenLogin: () => void;
   onOpenDigitalPass?: () => void;
+  onMinimize?: () => void;
+  onOpenUserDrawer?: () => void;
 }
 
 export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   currentCamper,
   currentUser,
   onOpenLogin,
+  onOpenDigitalPass,
+  onMinimize,
+  onOpenUserDrawer,
 }) => {
   const isLoggedIn = Boolean(currentCamper || currentUser);
   const isAdmin = Boolean(
@@ -116,6 +123,20 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const editCoverInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcut: Esc to minimize player if no modals are open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const hasOpenModal = document.querySelector('[role="dialog"]') || isUploadModalOpen || isLyricsModalOpen || Boolean(editingTrack);
+        if (!hasOpenModal && onMinimize) {
+          onMinimize();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onMinimize, isUploadModalOpen, isLyricsModalOpen, editingTrack]);
 
   // Upload Form state (Admin)
   const [uploadTitle, setUploadTitle] = useState('');
@@ -379,70 +400,109 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   // Gatekeeper for logged out visitors
   if (!isLoggedIn) {
     return (
-      <div className="max-w-4xl mx-auto py-10 px-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#181a20] via-[#12141a] to-[#0c0d12] border border-white/10 p-8 sm:p-12 text-center shadow-2xl">
-          <div className="absolute -top-24 -left-24 w-72 h-72 bg-[#1db954]/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="min-h-screen w-full bg-gradient-to-b from-[#0b0c10] via-[#07080a] to-[#040406] text-white flex flex-col relative overflow-hidden animate-fadeIn">
+        {/* Ambient lighting glows for depth */}
+        <div className="absolute -top-32 left-1/4 w-96 h-96 bg-[#1db954]/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/3 -right-24 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
 
-          <div className="relative mx-auto mb-6 w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-zinc-900 to-zinc-800 p-1 shadow-2xl ring-4 ring-white/10 flex items-center justify-center group animate-pulse">
-            <div className="w-full h-full rounded-full bg-[#121212] flex items-center justify-center border-4 border-dashed border-zinc-700/60">
-              <Disc3 className="w-12 h-12 text-[#1db954] animate-spin" style={{ animationDuration: '10s' }} />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-black/80 backdrop-blur-md flex items-center justify-center border border-white/20">
-                <Lock className="w-4 h-4 text-emerald-400" />
+        {/* Minimal top bar for logged-out view */}
+        <header className="sticky top-0 z-30 w-full px-4 sm:px-8 py-3 bg-[#0b0c10]/80 backdrop-blur-xl border-b border-white/10 flex items-center justify-between">
+          {onMinimize ? (
+            <button
+              onClick={onMinimize}
+              className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md border border-white/10 group active:scale-95"
+              title="Return to Camp (Esc)"
+            >
+              <ChevronDown className="w-4 h-4 text-[#1db954] group-hover:translate-y-0.5 transition-transform" />
+              <span>Back to Camp</span>
+              <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 bg-black/40 text-[10px] text-zinc-400 rounded border border-white/10 font-mono">Esc</kbd>
+            </button>
+          ) : <div />}
+
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#1db954] animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Praise &amp; Worship Hub</span>
+          </div>
+
+          <button
+            onClick={onOpenLogin}
+            className="px-4 py-1.5 rounded-full bg-[#1db954] hover:bg-[#1ed760] text-black text-xs font-bold transition-all transform hover:scale-105 active:scale-95 shadow-md shadow-[#1db954]/20 cursor-pointer"
+          >
+            Sign In
+          </button>
+        </header>
+
+        {/* Gatekeeper Card */}
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+          <div className="relative max-w-xl w-full overflow-hidden rounded-3xl bg-gradient-to-b from-[#181a20] via-[#12141a] to-[#0c0d12] border border-white/10 p-8 sm:p-12 text-center shadow-2xl">
+            <div className="relative mx-auto mb-6 w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-zinc-900 to-zinc-800 p-1 shadow-2xl ring-4 ring-white/10 flex items-center justify-center group animate-pulse">
+              <div className="w-full h-full rounded-full bg-[#121212] flex items-center justify-center border-4 border-dashed border-zinc-700/60">
+                <Disc3 className="w-12 h-12 text-[#1db954] animate-spin" style={{ animationDuration: '10s' }} />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-black/80 backdrop-blur-md flex items-center justify-center border border-white/20">
+                  <Lock className="w-4 h-4 text-emerald-400" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1db954]/15 border border-[#1db954]/30 text-[#1db954] text-xs font-bold uppercase tracking-wider mb-4">
-            <Radio className="w-3.5 h-3.5" />
-            <span>Members &amp; Delegates Exclusive</span>
-          </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1db954]/15 border border-[#1db954]/30 text-[#1db954] text-xs font-bold uppercase tracking-wider mb-4">
+              <Radio className="w-3.5 h-3.5" />
+              <span>Members &amp; Delegates Exclusive</span>
+            </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            VLC 2027 Praise &amp; Worship Music
-          </h1>
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              VLC 2027 Praise &amp; Worship Music
+            </h1>
 
-          <p className="mt-3 text-sm sm:text-base text-zinc-400 max-w-xl mx-auto leading-relaxed">
-            Experience our camp anthems, live praise recordings, choir sessions, and acoustic night recordings. 
-            Access is reserved for registered delegates and church ministers.
-          </p>
+            <p className="mt-3 text-sm sm:text-base text-zinc-400 max-w-xl mx-auto leading-relaxed">
+              Experience our camp anthems, live praise recordings, choir sessions, and acoustic night recordings. 
+              Access is reserved for registered delegates and church ministers.
+            </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={onOpenLogin}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#1db954] hover:bg-[#1ed760] text-black font-extrabold text-sm transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1db954]/25 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Music className="w-4 h-4 fill-black" />
-              <span>Sign In to Open Music Player</span>
-            </button>
-          </div>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={onOpenLogin}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#1db954] hover:bg-[#1ed760] text-black font-extrabold text-sm transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1db954]/25 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Music className="w-4 h-4 fill-black" />
+                <span>Sign In to Open Music Player</span>
+              </button>
+              {onMinimize && (
+                <button
+                  onClick={onMinimize}
+                  className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 text-zinc-200 font-semibold text-xs transition-all cursor-pointer border border-white/10"
+                >
+                  Return to Camp
+                </button>
+              )}
+            </div>
 
-          {/* Subtle Outbound External Playlists */}
-          <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-400">
-            <span className="text-zinc-500">Also on external streaming:</span>
-            <a
-              href={playlists.find((p) => p.platform === 'spotify')?.url || 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-[#1db954]/15 hover:text-[#1db954] border border-white/10 text-xs font-semibold flex items-center gap-1.5 text-zinc-300 transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1db954]" />
-              <span>Spotify</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </a>
+            {/* Subtle Outbound External Playlists */}
+            <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-400">
+              <span className="text-zinc-500">Also on external streaming:</span>
+              <a
+                href={playlists.find((p) => p.platform === 'spotify')?.url || 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-[#1db954]/15 hover:text-[#1db954] border border-white/10 text-xs font-semibold flex items-center gap-1.5 text-zinc-300 transition-colors"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1db954]" />
+                <span>Spotify</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
 
-            <a
-              href={playlists.find((p) => p.platform === 'youtube')?.url || 'https://music.youtube.com'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-red-500/15 hover:text-red-400 border border-white/10 text-xs font-semibold flex items-center gap-1.5 text-zinc-300 transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-              <span>YouTube Music</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </a>
+              <a
+                href={playlists.find((p) => p.platform === 'youtube')?.url || 'https://music.youtube.com'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-red-500/15 hover:text-red-400 border border-white/10 text-xs font-semibold flex items-center gap-1.5 text-zinc-300 transition-colors"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                <span>YouTube Music</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -450,12 +510,91 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   }
 
   return (
-    <div className="w-full pb-36 animate-fadeIn">
+    <div className="min-h-screen w-full bg-gradient-to-b from-[#0b0c10] via-[#07080a] to-[#040406] text-white flex flex-col relative overflow-x-hidden selection:bg-[#1db954] selection:text-black animate-fadeIn pb-36">
+      {/* Ambient lighting glows for depth */}
+      <div className="absolute -top-40 -left-20 w-[500px] h-[500px] bg-[#1db954]/10 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute top-1/4 -right-32 w-[450px] h-[450px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none" />
+
       {/* Slide-Up Up Next Queue Drawer */}
       <UpNextQueueDrawer />
 
-      {/* Main Spotify-Dark Container */}
-      <div className="rounded-3xl bg-gradient-to-b from-[#181a20] via-[#121318] to-[#0c0d10] border border-white/10 p-4 sm:p-7 shadow-2xl text-white">
+      {/* Top Sticky Immersive Navigation Header */}
+      <header className="sticky top-0 z-30 w-full px-4 sm:px-8 py-3 bg-[#0b0c10]/85 backdrop-blur-xl border-b border-white/10 flex items-center justify-between gap-4">
+        {/* Left: Minimize Player button with Esc keyboard shortcut */}
+        <div className="flex items-center gap-2">
+          {onMinimize && (
+            <button
+              onClick={onMinimize}
+              className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md border border-white/10 group shadow-sm active:scale-95"
+              title="Minimize to floating mini-player (Esc)"
+            >
+              <ChevronDown className="w-4 h-4 text-[#1db954] group-hover:translate-y-0.5 transition-transform" />
+              <span>Minimize Player</span>
+              <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 bg-black/40 text-[10px] text-zinc-400 rounded border border-white/10 font-mono">Esc</kbd>
+            </button>
+          )}
+        </div>
+
+        {/* Center: Live Hub Branding */}
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1db954] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1db954]" />
+          </span>
+          <span className="font-bold uppercase tracking-wider text-zinc-300 text-[11px]">Praise &amp; Worship Hub</span>
+          <span className="text-zinc-500">&bull;</span>
+          <span className="text-zinc-400 text-[11px] font-medium">{tracks.length} Songs &bull; {totalPlays.toLocaleString()} Plays</span>
+        </div>
+
+        {/* Right: Quick actions, Digital Pass & User Drawer Trigger */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsQueueOpen(true)}
+            className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-zinc-200 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Up Next Queue"
+          >
+            <ListMusic className="w-3.5 h-3.5 text-[#1db954]" />
+            <span className="hidden md:inline">Queue</span>
+          </button>
+
+          {onOpenDigitalPass && (currentCamper || currentUser) && (
+            <button
+              onClick={onOpenDigitalPass}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium border border-white/10 transition-colors cursor-pointer"
+              title="Open Digital Pass"
+            >
+              <span>Digital Pass</span>
+            </button>
+          )}
+
+          {onOpenUserDrawer && (
+            <button
+              onClick={onOpenUserDrawer}
+              className="p-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 transition-all cursor-pointer flex items-center gap-2 text-xs font-medium text-white pl-1.5 pr-3 shadow-xs"
+              title="Open Account & Profile Menu"
+            >
+              {currentCamper?.selfie_url ? (
+                <img
+                  src={currentCamper.selfie_url}
+                  alt={currentCamper.nickname || 'User'}
+                  className="w-5 h-5 rounded-full object-cover ring-1 ring-[#1db954]"
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-[#1db954] text-black font-black text-[10px] flex items-center justify-center">
+                  {(currentCamper?.nickname || currentUser?.name || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="max-w-[75px] sm:max-w-[120px] truncate">
+                {currentCamper?.nickname || currentUser?.name || 'Profile'}
+              </span>
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Main Full-Bleed Content Container */}
+      <div className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5">
+        <div className="rounded-3xl bg-gradient-to-b from-[#14161c] via-[#0f1014] to-[#0a0b0e] border border-white/10 p-4 sm:p-7 shadow-2xl text-white">
         
         {/* Top Header & Quick Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
@@ -862,6 +1001,7 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
           </div>
         </div>
       </div>
+    </div>
 
       {/* FIXED DOCKED SPOTIFY-LIKE PLAYER BAR */}
       {currentTrack && (
@@ -1052,7 +1192,31 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                   className="w-20 h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#1db954]"
                 />
               </div>
+
+              {/* Minimize action */}
+              {onMinimize && (
+                <button
+                  onClick={onMinimize}
+                  title="Minimize player (Esc)"
+                  className="p-2 rounded-full text-zinc-400 hover:text-[#1db954] hover:bg-white/10 transition-colors cursor-pointer ml-1"
+                >
+                  <Minimize2 className="w-4 h-4 text-zinc-300 hover:text-[#1db954]" />
+                </button>
+              )}
             </div>
+
+            {/* Mobile Minimize button */}
+            {onMinimize && (
+              <div className="flex md:hidden items-center shrink-0">
+                <button
+                  onClick={onMinimize}
+                  title="Minimize player"
+                  className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
+                >
+                  <ChevronDown className="w-4 h-4 text-[#1db954]" />
+                </button>
+              </div>
+            )}
 
           </div>
         </div>

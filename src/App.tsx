@@ -66,7 +66,13 @@ export function App() {
     return 'home';
   });
 
+  // Track previous tab for smooth fullscreen player minimize return
+  const [previousTab, setPreviousTab] = useState<AppTab>('home');
+
   const navigateToTab = (tab: AppTab, options?: { churchSlug?: string; camperId?: string; replace?: boolean }) => {
+    if (tab === 'music' && activeTab !== 'music') {
+      setPreviousTab(activeTab);
+    }
     setActiveTab(tab);
     if (typeof window === 'undefined') return;
 
@@ -99,6 +105,11 @@ export function App() {
         window.history.pushState({ tab }, '', targetPath);
       }
     }
+  };
+
+  const handleMinimizeMusic = () => {
+    const returnTab = previousTab === 'music' ? 'home' : previousTab;
+    navigateToTab(returnTab);
   };
 
   // Camper user state
@@ -217,7 +228,10 @@ export function App() {
       } else if (pathname === '/feed' || pathname === '/community') {
         setActiveTab('feed');
       } else if (pathname === '/music' || pathname === '/praise' || pathname === '/worship' || pathname === '/player') {
-        setActiveTab('music');
+        setActiveTab((curr) => {
+          if (curr !== 'music') setPreviousTab(curr);
+          return 'music';
+        });
       } else if (pathname === '/join' || pathname === '/join/' || pathname.startsWith('/join/') || pathname === '/churches') {
         setActiveTab('churches');
       } else if (pathname === '/overview' || pathname === '/dashboard') {
@@ -458,7 +472,7 @@ export function App() {
     <MusicPlayerProvider currentCamper={currentCamper}>
       <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
       {/* Top Fixed Header with Schedule, Overview, Churches, and Sign-in */}
-      {activeTab !== 'home' && (
+      {activeTab !== 'home' && activeTab !== 'music' && (
         <Header
           onLogoClick={() => navigateToTab(isAdminAuthenticated ? 'admin' : 'home')}
           onSignInClick={() => {
@@ -485,7 +499,7 @@ export function App() {
       )}
 
       {/* Main Content Area */}
-      <main className={activeTab === 'home' ? 'flex-1 w-full p-0 m-0 max-w-none' : 'flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8'}>
+      <main className={activeTab === 'home' || activeTab === 'music' ? 'flex-1 w-full p-0 m-0 max-w-none' : 'flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8'}>
         {/* Festivent-Inspired Full-Width Hero Landing Page (Default for /) */}
         {activeTab === 'home' && (
           <FestiventLandingPage
@@ -673,24 +687,28 @@ export function App() {
             currentUser={currentUser}
             onOpenLogin={handleOpenAuth}
             onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
+            onMinimize={handleMinimizeMusic}
+            onOpenUserDrawer={() => setIsUserDrawerOpen(true)}
           />
         )}
       </main>
 
       {/* Clean Minimalist Footer */}
-      <footer className="border-t border-zinc-200/80 bg-white py-8 px-4 text-center text-xs text-zinc-500 space-y-2">
-        <p>
-          <strong className="text-zinc-900">VLC 2027</strong> &bull; Vision &amp; Leadership Camp &bull; <em>&ldquo;Arise &amp; Shine&rdquo; (Isaiah 60:1)</em>
-        </p>
-        <p>
-          Organized by Pentecostal Christian Church Incorporated (PCCI) &bull; National Office: Bambang, Nueva Vizcaya
-        </p>
-        <div className="pt-2 flex items-center justify-center gap-3 text-[11px] text-zinc-400">
-          <span>Powered by Cloudflare Pages &amp; D1 SQLite</span>
-          <span>&bull;</span>
-          <span>Theme: &ldquo;Arise &amp; Shine&rdquo; (Isaiah 60:1)</span>
-        </div>
-      </footer>
+      {activeTab !== 'music' && (
+        <footer className="border-t border-zinc-200/80 bg-white py-8 px-4 text-center text-xs text-zinc-500 space-y-2">
+          <p>
+            <strong className="text-zinc-900">VLC 2027</strong> &bull; Vision &amp; Leadership Camp &bull; <em>&ldquo;Arise &amp; Shine&rdquo; (Isaiah 60:1)</em>
+          </p>
+          <p>
+            Organized by Pentecostal Christian Church Incorporated (PCCI) &bull; National Office: Bambang, Nueva Vizcaya
+          </p>
+          <div className="pt-2 flex items-center justify-center gap-3 text-[11px] text-zinc-400">
+            <span>Powered by Cloudflare Pages &amp; D1 SQLite</span>
+            <span>&bull;</span>
+            <span>Theme: &ldquo;Arise &amp; Shine&rdquo; (Isaiah 60:1)</span>
+          </div>
+        </footer>
+      )}
 
       {/* Unified Single Login Modal (for both Campers and Admins) */}
       <UnifiedLoginModal
