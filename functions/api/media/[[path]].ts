@@ -53,7 +53,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     // Infer content type if missing
     if (!headers.has('content-type')) {
       const lower = key.toLowerCase();
-      if (lower.endsWith('.mp4')) headers.set('content-type', 'video/mp4');
+      if (lower.endsWith('.mp3')) headers.set('content-type', 'audio/mpeg');
+      else if (lower.endsWith('.wav')) headers.set('content-type', 'audio/wav');
+      else if (lower.endsWith('.m4a') || lower.endsWith('.aac')) headers.set('content-type', 'audio/aac');
+      else if (lower.endsWith('.ogg')) headers.set('content-type', 'audio/ogg');
+      else if (lower.endsWith('.mp4')) headers.set('content-type', 'video/mp4');
       else if (lower.endsWith('.webm')) headers.set('content-type', 'video/webm');
       else if (lower.endsWith('.mov')) headers.set('content-type', 'video/quicktime');
       else if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) headers.set('content-type', 'image/jpeg');

@@ -420,3 +420,36 @@ export interface PresignUploadResult {
   error?: string;
 }
 
+export type MusicCategory = 'all' | 'worship' | 'praise' | 'anthem' | 'acoustic' | 'reflection';
+
+export interface MusicTrack {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  duration_display: string;
+  audio_url: string;
+  cover_art_url?: string | null;
+  category: 'worship' | 'praise' | 'anthem' | 'acoustic' | 'reflection';
+  lyrics?: string | null;
+  spotify_url?: string | null;
+  youtube_url?: string | null;
+  uploaded_by?: string;
+  sort_order: number;
+  is_published: number;
+  created_at: string;
+}
+
+export interface MusicPlaylist {
+  id: string;
+  title: string;
+  platform: 'spotify' | 'youtube' | 'apple' | 'custom';
+  url: string;
+  description?: string | null;
+  cover_url?: string | null;
+  is_featured: number;
+  sort_order: number;
+  created_at: string;
+}
+

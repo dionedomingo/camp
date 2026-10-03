@@ -8,13 +8,14 @@ import {
   Calendar,
   Flame,
   Home,
-  LogIn
+  LogIn,
+  Music
 } from 'lucide-react';
 import type { AdminUser, CamperRegistration } from '../types';
 import { useLanguage } from '../lib/i18n';
 import { LanguageSelector } from './LanguageSelector';
 
-export type AppTab = 'home' | 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed';
+export type AppTab = 'home' | 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed' | 'music';
 
 interface HeaderProps {
   onLogoClick: () => void;
@@ -30,6 +31,7 @@ interface HeaderProps {
   onNavigateToOverview?: () => void;
   onNavigateToChurches?: () => void;
   onNavigateToFeed?: () => void;
+  onNavigateToMusic?: () => void;
   activeTab: AppTab;
 }
 
@@ -47,6 +49,7 @@ export const Header: FC<HeaderProps> = ({
   onNavigateToOverview,
   onNavigateToChurches,
   onNavigateToFeed,
+  onNavigateToMusic,
   activeTab,
 }) => {
   const { t } = useLanguage();
@@ -111,6 +114,19 @@ export const Header: FC<HeaderProps> = ({
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span>{t('nav.feed')}</span>
+              </button>
+            )}
+
+            {onNavigateToMusic && (
+              <button
+                onClick={onNavigateToMusic}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${activeTab === 'music'
+                  ? 'bg-emerald-50 text-emerald-700 font-semibold shadow-2xs ring-1 ring-emerald-500/20'
+                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                  }`}
+              >
+                <Music className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{t('nav.music')}</span>
               </button>
             )}
 
@@ -270,6 +286,18 @@ export const Header: FC<HeaderProps> = ({
             >
               <Sparkles className="w-3 h-3 text-amber-400" />
               <span>{t('nav.feed')}</span>
+            </button>
+          )}
+          {onNavigateToMusic && (
+            <button
+              onClick={onNavigateToMusic}
+              className={`tap-pill px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1.5 ${activeTab === 'music'
+                ? 'bg-emerald-600 text-white shadow-2xs'
+                : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100'
+                }`}
+            >
+              <Music className="w-3 h-3 text-emerald-500" />
+              <span>{t('nav.music')}</span>
             </button>
           )}
           {onNavigateToSchedule && (

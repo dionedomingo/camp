@@ -261,4 +261,40 @@ CREATE INDEX IF NOT EXISTS idx_reactions_lookup ON reactions(reactable_type, rea
 CREATE INDEX IF NOT EXISTS idx_reactions_camper ON reactions(camper_id);
 CREATE INDEX IF NOT EXISTS idx_reactions_aggregate ON reactions(reactable_type, reactable_id, reaction_type);
 
+-- Music Tracks table: Praise & Worship songs stored on R2 or external audio streams
+CREATE TABLE IF NOT EXISTS music_tracks (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    artist TEXT NOT NULL,
+    album TEXT DEFAULT 'VLC 2027 Worship',
+    duration INTEGER DEFAULT 0,
+    duration_display TEXT DEFAULT '3:45',
+    audio_url TEXT NOT NULL,
+    cover_art_url TEXT,
+    category TEXT DEFAULT 'worship', -- 'worship', 'praise', 'anthem', 'acoustic', 'reflection'
+    lyrics TEXT,
+    spotify_url TEXT,
+    youtube_url TEXT,
+    uploaded_by TEXT DEFAULT 'admin',
+    sort_order INTEGER DEFAULT 0,
+    is_published INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_music_tracks_published ON music_tracks(is_published, sort_order ASC);
+CREATE INDEX IF NOT EXISTS idx_music_tracks_category ON music_tracks(category);
+
+-- Curated External Music Playlists (Spotify, YouTube Music)
+CREATE TABLE IF NOT EXISTS music_playlists (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    platform TEXT NOT NULL CHECK(platform IN ('spotify', 'youtube', 'apple', 'custom')),
+    url TEXT NOT NULL,
+    description TEXT,
+    cover_url TEXT,
+    is_featured INTEGER DEFAULT 1,
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 

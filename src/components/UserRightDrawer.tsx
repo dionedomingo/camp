@@ -11,6 +11,7 @@ import {
   Flame,
   CheckCircle2,
   Sparkles,
+  Music,
 } from 'lucide-react';
 import type { CamperRegistration, AdminUser } from '../types';
 import { useLanguage } from '../lib/i18n';
@@ -24,6 +25,7 @@ export interface UserRightDrawerProps {
   onViewProfile?: () => void;
   onOpenAccount?: () => void;
   onOpenDigitalPass?: () => void;
+  onOpenMusic?: () => void;
   onSignOut: () => void;
   onOpenAdmin?: () => void;
 }
@@ -37,6 +39,7 @@ export const UserRightDrawer: FC<UserRightDrawerProps> = ({
   onViewProfile,
   onOpenAccount,
   onOpenDigitalPass,
+  onOpenMusic,
   onSignOut,
   onOpenAdmin,
 }) => {
@@ -250,6 +253,35 @@ export const UserRightDrawer: FC<UserRightDrawerProps> = ({
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+            </button>
+
+            {/* 3. PRAISE & MUSIC PLAYER */}
+            <button
+              onClick={() => {
+                onClose();
+                onOpenMusic?.();
+              }}
+              className="w-full text-left p-4 rounded-2xl bg-gradient-to-r from-[#1db954]/20 via-[#1db954]/10 to-transparent border border-[#1db954]/30 hover:border-[#1db954]/70 hover:from-[#1db954]/30 transition-all group cursor-pointer flex items-center justify-between shadow-lg shadow-[#1db954]/5"
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-[#1db954]/25 text-[#1db954] flex items-center justify-center group-hover:scale-105 transition-transform shrink-0 border border-[#1db954]/40">
+                  <Music className="w-5 h-5 fill-[#1db954]/30" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white group-hover:text-[#1db954] transition-colors block">
+                      Praise &amp; Music Player
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-[#1db954]/20 text-[#1db954] border border-[#1db954]/30">
+                      Spotify Style
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 truncate mt-0.5">
+                    Stream camp anthems, worship sets &amp; playlists
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-[#1db954]/70 group-hover:text-[#1db954] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
             </button>
 
             {/* 3. ACCOUNT & SETTINGS */}

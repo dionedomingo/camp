@@ -16,6 +16,7 @@ import { CommunityFeed } from './components/CommunityFeed';
 import { AdminLeftDrawer, type AdminTab } from './components/AdminLeftDrawer';
 import { UserRightDrawer } from './components/UserRightDrawer';
 import { DigitalPassModal } from './components/DigitalPassModal';
+import { CampMusicPlayerPage } from './components/music/CampMusicPlayerPage';
 import type { Church, RegistrationStats, CamperRegistration, AdminUser, CampEvent } from './types';
 import { apiService } from './services/api';
 
@@ -33,6 +34,9 @@ export function App() {
       }
       if (pathname === '/feed' || pathname === '/community') {
         return 'feed';
+      }
+      if (pathname === '/music' || pathname === '/praise' || pathname === '/worship' || pathname === '/player') {
+        return 'music';
       }
       if (pathname === '/join' || pathname === '/join/' || pathname.startsWith('/join/') || pathname === '/churches') {
         return 'churches';
@@ -73,6 +77,8 @@ export function App() {
       targetPath = '/admin';
     } else if (tab === 'feed') {
       targetPath = '/feed';
+    } else if (tab === 'music') {
+      targetPath = '/music';
     } else if (tab === 'profile') {
       targetPath = options?.camperId ? `/camper/${options.camperId}` : '/camper';
     }
@@ -198,6 +204,10 @@ export function App() {
       // Sync active tab with browser URL history
       if (pathname.startsWith('/camper/')) {
         setActiveTab('profile');
+      } else if (pathname === '/feed' || pathname === '/community') {
+        setActiveTab('feed');
+      } else if (pathname === '/music' || pathname === '/praise' || pathname === '/worship' || pathname === '/player') {
+        setActiveTab('music');
       } else if (pathname === '/join' || pathname === '/join/' || pathname.startsWith('/join/') || pathname === '/churches') {
         setActiveTab('churches');
       } else if (pathname === '/overview' || pathname === '/dashboard') {
@@ -458,6 +468,7 @@ export function App() {
           onNavigateToOverview={() => navigateToTab('dashboard')}
           onNavigateToChurches={() => navigateToTab('churches')}
           onNavigateToFeed={() => navigateToTab('feed')}
+          onNavigateToMusic={() => navigateToTab('music')}
           activeTab={activeTab}
         />
       )}
@@ -618,6 +629,16 @@ export function App() {
             onOpenLogin={() => setIsLoginOpen(true)}
           />
         )}
+
+        {/* Camp Praise & Worship Music Player */}
+        {activeTab === 'music' && (
+          <CampMusicPlayerPage
+            currentCamper={currentCamper}
+            currentUser={currentUser}
+            onOpenLogin={handleOpenAuth}
+            onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
+          />
+        )}
       </main>
 
       {/* Clean Minimalist Footer */}
@@ -743,6 +764,10 @@ export function App() {
             setIsAdminDrawerOpen(false);
             setActiveTab('schedule');
           }}
+          onOpenMusic={() => {
+            setIsAdminDrawerOpen(false);
+            navigateToTab('music');
+          }}
           onSignOut={() => {
             setIsAdminDrawerOpen(false);
             handleExitAdmin();
@@ -766,6 +791,10 @@ export function App() {
         }}
         onOpenAccount={() => handleOpenCamperHubWithTab('profile')}
         onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
+        onOpenMusic={() => {
+          setIsUserDrawerOpen(false);
+          navigateToTab('music');
+        }}
         onSignOut={handleSignOutUnified}
         onOpenAdmin={() => {
           setIsUserDrawerOpen(false);

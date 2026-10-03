@@ -12,7 +12,8 @@ import {
   ShieldCheck,
   ChevronRight,
   HardDrive,
-  Printer
+  Printer,
+  Music
 } from 'lucide-react';
 import type { AdminUser } from '../types';
 import { Badge } from './ui/badge';
@@ -27,6 +28,7 @@ interface AdminLeftDrawerProps {
   activeTab: AdminTab;
   onSelectTab: (tab: AdminTab) => void;
   onReturnToSite: () => void;
+  onOpenMusic?: () => void;
   onSignOut: () => void;
 }
 
@@ -37,6 +39,7 @@ export const AdminLeftDrawer: FC<AdminLeftDrawerProps> = ({
   activeTab,
   onSelectTab,
   onReturnToSite,
+  onOpenMusic,
   onSignOut,
 }) => {
   // Enforce access control: only users with admin/staff roles can view drawer
@@ -258,6 +261,20 @@ export const AdminLeftDrawer: FC<AdminLeftDrawerProps> = ({
 
         {/* Drawer Footer Actions */}
         <div className="p-4 border-t border-zinc-200 bg-zinc-50/70 space-y-2">
+          {onOpenMusic && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                onOpenMusic();
+                onClose();
+              }}
+              className="w-full justify-start gap-2 h-9 text-xs text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 border-emerald-200 cursor-pointer"
+            >
+              <Music className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Camp Praise &amp; Music Player</span>
+            </Button>
+          )}
+
           <Button
             variant="outline"
             onClick={() => {

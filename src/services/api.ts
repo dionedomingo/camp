@@ -16,7 +16,9 @@ import type {
   CamperStoryGroup,
   PostComment,
   AllowedReactionEmoji,
-  PresignUploadResult
+  PresignUploadResult,
+  MusicTrack,
+  MusicPlaylist
 } from '../types';
 
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
@@ -2807,6 +2809,130 @@ class CampApiService {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to delete story';
       return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Get camp worship & praise tracks + curated playlists
+   */
+  async getMusicTracks(category?: string, search?: string): Promise<{
+    success: boolean;
+    tracks: MusicTrack[];
+    playlists: MusicPlaylist[];
+    error?: string;
+  }> {
+    try {
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.set('category', category);
+      if (search) params.set('search', search);
+
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(`/api/music${qs}`);
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+      const data = await res.json() as { success: boolean; tracks: MusicTrack[]; playlists: MusicPlaylist[]; error?: string };
+      return {
+        success: data.success ?? true,
+        tracks: data.tracks || [],
+        playlists: data.playlists || [],
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load camp music tracks';
+      console.warn('[apiService.getMusicTracks] Fallback or error:', msg);
+      return { success: false, tracks: [], playlists: [], error: msg };
+    }
+  }
+
+  /**
+   * Upload an MP3 song to Cloudflare R2 and publish to D1
+   */
+  async uploadMusicTrack(formData: FormData): Promise<{
+    success: boolean;
+    track?: MusicTrack;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch('/api/music', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json() as any;
+      if (!res.ok) {
+        return { success: false, error: data.error || `HTTP ${res.status}` };
+      }
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to upload song';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Update an existing track metadata
+   */
+  async updateMusicTrack(id: string, updates: Partial<MusicTrack>): Promise<{
+    success: boolean;
+    track?: MusicTrack;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch(`/api/music/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update song';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Delete a music track from D1 and R2
+   */
+  async deleteMusicTrack(id: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/music/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete song';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Get Spotify & YouTube Music playlists
+   */
+  async getMusicPlaylists(): Promise<{ success: boolean; playlists: MusicPlaylist[]; error?: string }> {
+    try {
+      const res = await fetch('/api/music/playlists');
+      const data = await res.json() as any;
+      return { success: true, playlists: data.playlists || [] };
+    } catch (err: unknown) {
+      return { success: false, playlists: [], error: err instanceof Error ? err.message : 'Failed to fetch playlists' };
+    }
+  }
+
+  /**
+   * Save or update an external Spotify/YouTube playlist
+   */
+  async saveMusicPlaylist(playlist: Partial<MusicPlaylist>): Promise<{ success: boolean; playlist?: MusicPlaylist; error?: string }> {
+    try {
+      const res = await fetch('/api/music/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(playlist),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to save playlist' };
     }
   }
 
