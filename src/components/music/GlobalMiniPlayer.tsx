@@ -13,11 +13,13 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 interface GlobalMiniPlayerProps {
   onExpandToMusic: () => void;
   activeTab: string;
+  isLoggedIn?: boolean;
 }
 
 export const GlobalMiniPlayer: FC<GlobalMiniPlayerProps> = ({
   onExpandToMusic,
   activeTab,
+  isLoggedIn = false,
 }) => {
   const {
     currentTrack,
@@ -29,10 +31,32 @@ export const GlobalMiniPlayer: FC<GlobalMiniPlayerProps> = ({
     dismissPlayer,
     isFavorite,
     toggleFavorite,
+    isPlayerInitialized,
+    isDismissed,
   } = useMusicPlayer();
 
-  // Only show mini-player when a track is active AND user is not already on the full music page
-  if (!currentTrack || activeTab === 'music') {
+  // 1. Available ONLY for logged-in users
+  if (!isLoggedIn) {
+    return null;
+  }
+
+  // 2. Only available if initialized from the music page
+  if (!isPlayerInitialized) {
+    return null;
+  }
+
+  // 3. If closed/dismissed by user, keep it closed
+  if (isDismissed) {
+    return null;
+  }
+
+  // 4. Do not show when on the full music page (has its own full docked player bar)
+  if (activeTab === 'music') {
+    return null;
+  }
+
+  // 5. Must have an active track loaded
+  if (!currentTrack) {
     return null;
   }
 
@@ -134,8 +158,11 @@ export const GlobalMiniPlayer: FC<GlobalMiniPlayerProps> = ({
 
           {/* Dismiss Player */}
           <button
-            onClick={dismissPlayer}
-            title="Stop & close player"
+            onClick={(e) => {
+              e.stopPropagation();
+              dismissPlayer();
+            }}
+            title="Stop & close mini player"
             className="p-1.5 rounded-lg text-zinc-500 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />

@@ -55,6 +55,9 @@ export interface MusicPlayerContextType {
   setIsQueueOpen: (open: boolean) => void;
   dismissPlayer: () => void;
   setAudioError: (error: string | null) => void;
+  isPlayerInitialized: boolean;
+  isDismissed: boolean;
+  initializePlayer: () => void;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | null>(null);
@@ -79,6 +82,14 @@ export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, cu
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('all');
   const [isQueueOpen, setIsQueueOpen] = useState<boolean>(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [isPlayerInitialized, setIsPlayerInitialized] = useState<boolean>(false);
+  const [isDismissed, setIsDismissed] = useState<boolean>(false);
+
+  const initializePlayer = useCallback(() => {
+    setIsPlayerInitialized(true);
+    setIsDismissed(false);
+    setActiveQueue((prev) => (prev.length === 0 ? tracks : prev));
+  }, [tracks]);
 
   // Local Favorites
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -130,17 +141,18 @@ export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, cu
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentTrackIndex]);
 
   useEffect(() => {
     refreshTracks();
   }, [refreshTracks]);
 
-  // Current track derivation
+  // Current track derivation - active only when initialized
   const currentTrack: MusicTrack | null = useMemo(() => {
+    if (!isPlayerInitialized) return null;
     if (activeQueue.length === 0) return tracks[currentTrackIndex] || null;
     return activeQueue[currentTrackIndex] || activeQueue[0] || null;
-  }, [activeQueue, currentTrackIndex, tracks]);
+  }, [isPlayerInitialized, activeQueue, currentTrackIndex, tracks]);
 
   // Handle Play/Pause
   const togglePlayPause = useCallback(() => {
@@ -166,6 +178,8 @@ export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, cu
   // Play Specific Track
   const playTrack = useCallback(
     (index: number, customQueue?: MusicTrack[]) => {
+      setIsPlayerInitialized(true);
+      setIsDismissed(false);
       const queueToUse = customQueue || (activeQueue.length > 0 ? activeQueue : tracks);
       if (queueToUse.length === 0) return;
 
@@ -212,6 +226,8 @@ export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, cu
   // Play Track Directly
   const playTrackDirectly = useCallback(
     (track: MusicTrack) => {
+      setIsPlayerInitialized(true);
+      setIsDismissed(false);
       let idx = tracks.findIndex((t) => t.id === track.id);
       let queue = tracks;
       if (idx === -1) {
@@ -426,12 +442,14 @@ export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, cu
     }
   }, []);
 
-  // Dismiss player
+  // Dismiss player - properly stops playback, resets position, and marks as dismissed
   const dismissPlayer = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
     setIsPlaying(false);
+    setIsDismissed(true);
   }, []);
 
   // Native Audio Event Listeners
@@ -564,6 +582,9 @@ export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, cu
       setIsQueueOpen,
       dismissPlayer,
       setAudioError,
+      isPlayerInitialized,
+      isDismissed,
+      initializePlayer,
     }),
     [
       tracks,
@@ -600,6 +621,9 @@ export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, cu
       downloadTrackMp3,
       refreshTracks,
       dismissPlayer,
+      isPlayerInitialized,
+      isDismissed,
+      initializePlayer,
     ]
   );
 

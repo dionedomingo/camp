@@ -870,10 +870,11 @@ export function App() {
         onInviteFriend={() => currentCamper && handleOpenInviteModal(currentCamper)}
       />
 
-      {/* Global Persistent Mini-Player - Keeps playing seamlessly across tabs */}
+      {/* Global Persistent Mini-Player - Keeps playing seamlessly across tabs for logged in users */}
       <GlobalMiniPlayer
         onExpandToMusic={() => navigateToTab('music')}
         activeTab={activeTab}
+        isLoggedIn={Boolean(currentCamper || currentUser || isAdminAuthenticated)}
       />
 
     </div>

@@ -109,7 +109,13 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
     refreshTracks,
     setAudioError,
     favorites,
+    initializePlayer,
   } = useMusicPlayer();
+
+  // Initialize the music player session when opening the music page
+  useEffect(() => {
+    initializePlayer();
+  }, [initializePlayer]);
 
   // Local Filter & Search state
   const [selectedCategory, setSelectedCategory] = useState<MusicCategory | 'favorites'>('all');
