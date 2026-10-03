@@ -80,7 +80,6 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   // Global Audio Context
   const {
     tracks,
-    playlists,
     currentTrack,
     isPlaying,
     currentTime,
@@ -522,32 +521,6 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                 </button>
               )}
             </div>
-
-            {/* Subtle Outbound External Playlists */}
-            <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-400">
-              <span className="text-zinc-500">Also on external streaming:</span>
-              <a
-                href={playlists.find((p) => p.platform === 'spotify')?.url || 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-[#1db954]/15 hover:text-[#1db954] border border-white/10 text-xs font-semibold flex items-center gap-1.5 text-zinc-300 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1db954]" />
-                <span>Spotify</span>
-                <ExternalLink className="w-3 h-3 opacity-60" />
-              </a>
-
-              <a
-                href={playlists.find((p) => p.platform === 'youtube')?.url || 'https://music.youtube.com'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-red-500/15 hover:text-red-400 border border-white/10 text-xs font-semibold flex items-center gap-1.5 text-zinc-300 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                <span>YouTube Music</span>
-                <ExternalLink className="w-3 h-3 opacity-60" />
-              </a>
-            </div>
           </div>
         </div>
       </div>
@@ -703,33 +676,6 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
               <Mic2 className="w-3.5 h-3.5 text-blue-400" />
               <span>Lyrics &amp; Video</span>
             </button>
-
-            {/* Downsized External Playlist Pills */}
-            <div className="flex items-center gap-1.5 pl-1 border-l border-white/10">
-              <a
-                href={playlists.find((p) => p.platform === 'spotify')?.url || 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO'}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open external Spotify playlist"
-                className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-[#1db954]/15 hover:text-[#1db954] text-zinc-300 text-xs font-semibold border border-white/10 flex items-center gap-1.5 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1db954]" />
-                <span>Spotify</span>
-                <ExternalLink className="w-3 h-3 opacity-60" />
-              </a>
-
-              <a
-                href={playlists.find((p) => p.platform === 'youtube')?.url || 'https://music.youtube.com'}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open external YouTube Music playlist"
-                className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-red-500/15 hover:text-red-400 text-zinc-300 text-xs font-semibold border border-white/10 flex items-center gap-1.5 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                <span>YT Music</span>
-                <ExternalLink className="w-3 h-3 opacity-60" />
-              </a>
-            </div>
           </div>
         </div>
 
@@ -1026,36 +972,6 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
               );
             })
           )}
-        </div>
-
-        {/* Understated External Playlist Footer */}
-        <div className="mt-8 pt-4 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <span>Prefer streaming externally?</span>
-            <span className="text-zinc-600 hidden sm:inline">&bull; Official camp albums also on external platforms</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <a
-              href={playlists.find((p) => p.platform === 'spotify')?.url || 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 hover:bg-[#1db954]/10 hover:text-[#1db954] text-zinc-400 border border-white/5 transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1db954]" />
-              <span>Spotify Playlist</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </a>
-            <a
-              href={playlists.find((p) => p.platform === 'youtube')?.url || 'https://music.youtube.com'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-zinc-400 border border-white/5 transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-              <span>YouTube Music</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </a>
-          </div>
         </div>
       </div>
     </div>
