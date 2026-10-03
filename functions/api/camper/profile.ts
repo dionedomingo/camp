@@ -131,7 +131,10 @@ async function handleUpdate(context: EventContext<Env, any, any>): Promise<Respo
     const emergencyName = body.emergency_name !== undefined ? body.emergency_name : existing.emergency_name;
     const emergencyPhone = body.emergency_phone !== undefined ? body.emergency_phone : existing.emergency_phone;
     const emergencyRelation = body.emergency_relation !== undefined ? body.emergency_relation : existing.emergency_relation;
-    const favoriteVerse = body.favorite_verse || existing.favorite_verse;
+    const favoriteVerse = body.favorite_verse !== undefined ? body.favorite_verse : (existing.favorite_verse ?? null);
+    const verseReflection = body.verse_reflection !== undefined
+      ? body.verse_reflection
+      : (body.verseReflection !== undefined ? body.verseReflection : (existing.verse_reflection ?? null));
     let selfieUrl = body.selfie_url !== undefined ? body.selfie_url : existing.selfie_url;
     if (selfieUrl && typeof selfieUrl === 'string' && selfieUrl.startsWith('data:')) {
       selfieUrl = await saveSelfieToR2(context.env.MEDIA_BUCKET, selfieUrl, existing.id);
