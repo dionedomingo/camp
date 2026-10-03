@@ -109,6 +109,7 @@ export const translations = {
 
     // User Profile Right Drawer
     'drawer.accountTitle': 'Delegate Account',
+    'drawer.language': 'Language',
     'drawer.myProfile': 'My Profile',
     'drawer.myProfileDesc': 'View public profile, badge & community posts',
     'drawer.account': 'Account & Details',
@@ -215,6 +216,7 @@ export const translations = {
 
     // User Profile Right Drawer
     'drawer.accountTitle': 'Account ng Delegado',
+    'drawer.language': 'Wika',
     'drawer.myProfile': 'Aking Profile',
     'drawer.myProfileDesc': 'Tingnan ang pampublikong profile, badge at mga post',
     'drawer.account': 'Account at Detalye',
@@ -321,6 +323,7 @@ export const translations = {
 
     // User Profile Right Drawer
     'drawer.accountTitle': 'Account ti Delegado',
+    'drawer.language': 'Pagsasao',
     'drawer.myProfile': 'Ti Profile-ko',
     'drawer.myProfileDesc': 'Kitaen ti publiko a profile, badge ken posts',
     'drawer.account': 'Account ken Detalye',

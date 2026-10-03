@@ -3,11 +3,11 @@ import { Globe, ChevronDown, Check } from 'lucide-react';
 import { useLanguage, LANGUAGES } from '../lib/i18n';
 
 interface LanguageSelectorProps {
-  variant?: 'header' | 'hero' | 'minimal';
+  variant?: 'header' | 'hero' | 'minimal' | 'drawer';
 }
 
 export const LanguageSelector: FC<LanguageSelectorProps> = ({ variant = 'header' }) => {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -23,6 +23,42 @@ export const LanguageSelector: FC<LanguageSelectorProps> = ({ variant = 'header'
   }, []);
 
   const currentOption = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
+
+  if (variant === 'drawer') {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1 text-xs text-zinc-400">
+          <span className="flex items-center gap-1.5 font-semibold text-zinc-300">
+            <Globe className="w-3.5 h-3.5 text-blue-400" />
+            <span>{t('drawer.language')}</span>
+          </span>
+          <span className="text-[11px] text-zinc-400 font-medium">
+            {currentOption.flag} {currentOption.nativeName}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10">
+          {LANGUAGES.map((lang) => {
+            const isSelected = language === lang.code;
+            return (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => setLanguage(lang.code)}
+                className={`py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <span className="text-sm leading-none">{lang.flag}</span>
+                <span className="truncate">{lang.nativeName}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   if (variant === 'minimal') {
     return (

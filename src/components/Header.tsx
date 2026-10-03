@@ -173,8 +173,10 @@ export const Header: FC<HeaderProps> = ({
 
         {/* Right Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Language Selector */}
-          <LanguageSelector variant="header" />
+          {/* Language Selector (visible for guest visitors; moved into UserRightDrawer when logged in) */}
+          {!isAdminAuthenticated && !currentCamper && (
+            <LanguageSelector variant="header" />
+          )}
 
           {/* Arrival Fast Check-In Link */}
           {!isAdminAuthenticated && !currentCamper && onActivateClick && (

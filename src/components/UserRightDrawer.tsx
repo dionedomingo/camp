@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { CamperRegistration, AdminUser } from '../types';
 import { useLanguage } from '../lib/i18n';
+import { LanguageSelector } from './LanguageSelector';
 
 export interface UserRightDrawerProps {
   isOpen: boolean;
@@ -341,8 +342,11 @@ export const UserRightDrawer: FC<UserRightDrawerProps> = ({
           </div>
         </div>
 
-        {/* Bottom Sticky Action Footer with Logout */}
-        <div className="p-5 sm:p-6 border-t border-white/10 bg-slate-950/80 space-y-3">
+        {/* Bottom Sticky Action Footer with Language Selector & Logout */}
+        <div className="p-5 sm:p-6 border-t border-white/10 bg-slate-950/80 space-y-4">
+          {/* Language Selection */}
+          <LanguageSelector variant="drawer" />
+
           <button
             onClick={() => {
               onClose();
