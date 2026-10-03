@@ -17,6 +17,7 @@ import { AdminLeftDrawer, type AdminTab } from './components/AdminLeftDrawer';
 import { UserRightDrawer } from './components/UserRightDrawer';
 import { DigitalPassModal } from './components/DigitalPassModal';
 import { CampMusicPlayerPage } from './components/music/CampMusicPlayerPage';
+import { AccountPage } from './components/AccountPage';
 import { GlobalMiniPlayer } from './components/music/GlobalMiniPlayer';
 import { MusicPlayerProvider } from './context/MusicPlayerContext';
 import type { Church, RegistrationStats, CamperRegistration, AdminUser, CampEvent } from './types';
@@ -36,6 +37,9 @@ export function App() {
       }
       if (pathname === '/feed' || pathname === '/community') {
         return 'feed';
+      }
+      if (pathname === '/account' || pathname === '/settings' || pathname === '/profile/edit') {
+        return 'account';
       }
       if (pathname === '/music' || pathname === '/praise' || pathname === '/worship' || pathname === '/player') {
         return 'music';
@@ -81,6 +85,8 @@ export function App() {
       targetPath = '/feed';
     } else if (tab === 'music') {
       targetPath = '/music';
+    } else if (tab === 'account') {
+      targetPath = '/account';
     } else if (tab === 'profile') {
       targetPath = options?.camperId ? `/camper/${options.camperId}` : '/camper';
     }
@@ -206,6 +212,8 @@ export function App() {
       // Sync active tab with browser URL history
       if (pathname.startsWith('/camper/')) {
         setActiveTab('profile');
+      } else if (pathname === '/account' || pathname === '/settings' || pathname === '/profile/edit') {
+        setActiveTab('account');
       } else if (pathname === '/feed' || pathname === '/community') {
         setActiveTab('feed');
       } else if (pathname === '/music' || pathname === '/praise' || pathname === '/worship' || pathname === '/player') {
@@ -494,7 +502,7 @@ export function App() {
             onSignOut={handleSignOutUnified}
             onViewCamperProfile={handleOpenCamperProfile}
             onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
-            onOpenAccount={() => handleOpenCamperHubWithTab('profile')}
+            onOpenAccount={() => navigateToTab('account')}
             onNavigateToAdmin={() => navigateToTab('admin')}
             onOpenUserDrawer={() => setIsUserDrawerOpen(true)}
           />
@@ -616,8 +624,33 @@ export function App() {
             camperId={selectedCamperProfileId}
             onBack={handleCloseCamperProfile}
             onJoinDelegation={handleJoinDelegationFromProfile}
+            onNavigateToAccount={() => navigateToTab('account')}
             currentCamper={currentCamper}
             currentUser={currentUser}
+          />
+        )}
+
+        {/* Dedicated Account & Profile Details Page */}
+        {activeTab === 'account' && (
+          <AccountPage
+            currentCamper={currentCamper}
+            currentUser={currentUser}
+            onProfileUpdated={handleProfileUpdated}
+            onBack={() => {
+              if (currentCamper?.id) {
+                navigateToTab('profile', { camperId: currentCamper.id });
+              } else {
+                navigateToTab('schedule');
+              }
+            }}
+            onViewPublicProfile={(camperId) => {
+              setSelectedCamperProfileId(camperId);
+              navigateToTab('profile', { camperId });
+            }}
+            onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
+            onOpenLogin={handleOpenAuth}
+            onSignOut={handleSignOutUnified}
+            onNavigateToAdmin={() => navigateToTab('admin')}
           />
         )}
 
@@ -792,7 +825,10 @@ export function App() {
             handleOpenCamperHubWithTab('profile');
           }
         }}
-        onOpenAccount={() => handleOpenCamperHubWithTab('profile')}
+        onOpenAccount={() => {
+          setIsUserDrawerOpen(false);
+          navigateToTab('account');
+        }}
         onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
         onOpenMusic={() => {
           setIsUserDrawerOpen(false);

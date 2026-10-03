@@ -15,7 +15,7 @@ import type { AdminUser, CamperRegistration } from '../types';
 import { useLanguage } from '../lib/i18n';
 import { LanguageSelector } from './LanguageSelector';
 
-export type AppTab = 'home' | 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed' | 'music';
+export type AppTab = 'home' | 'schedule' | 'dashboard' | 'churches' | 'admin' | 'profile' | 'feed' | 'music' | 'account';
 
 interface HeaderProps {
   onLogoClick: () => void;

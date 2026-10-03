@@ -13,7 +13,8 @@ import {
   Check,
   PlusCircle,
   Image as ImageIcon,
-  MessageCircle
+  MessageCircle,
+  UserCog
 } from 'lucide-react';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
 import type {
@@ -34,6 +35,7 @@ interface PublicCamperProfilePageProps {
   camperId: string | null;
   onBack: () => void;
   onJoinDelegation?: (churchId: string) => void;
+  onNavigateToAccount?: () => void;
   currentCamper?: CamperRegistration | null;
   currentUser?: AdminUser | null;
 }
@@ -42,6 +44,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
   camperId,
   onBack,
   onJoinDelegation,
+  onNavigateToAccount,
   currentCamper,
   currentUser,
 }) => {
@@ -283,7 +286,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
               </div>
             </div>
 
-            {/* Owner Upload CTA */}
+            {/* Owner Upload & Account CTAs */}
             {isOwner && (
               <div className="flex sm:flex-col gap-2 shrink-0">
                 <button
@@ -308,6 +311,16 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Add Story</span>
                 </button>
+                {onNavigateToAccount && (
+                  <button
+                    type="button"
+                    onClick={onNavigateToAccount}
+                    className="tap-pill px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs flex items-center gap-1.5 border border-zinc-200/80 shadow-xs cursor-pointer transition-colors"
+                  >
+                    <UserCog className="w-3.5 h-3.5 text-zinc-600" />
+                    <span>Account Settings</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -597,6 +610,17 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
                 </>
               )}
             </button>
+
+            {isOwner && onNavigateToAccount && (
+              <button
+                type="button"
+                onClick={onNavigateToAccount}
+                className="tap-pill w-full sm:w-auto py-3 px-5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs shrink-0"
+              >
+                <UserCog className="w-4 h-4 text-zinc-300" />
+                <span>Edit Account Details</span>
+              </button>
+            )}
 
             {!isLoggedIn && onJoinDelegation && camper.church_id && (
               <button
