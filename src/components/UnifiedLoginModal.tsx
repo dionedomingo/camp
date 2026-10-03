@@ -4,8 +4,7 @@ import {
   ArrowRight,
   AlertCircle,
   Sparkles,
-  QrCode,
-  UserCheck
+  QrCode
 } from 'lucide-react';
 import {
   Dialog,
@@ -88,11 +87,6 @@ export const UnifiedLoginModal: FC<UnifiedLoginModalProps> = ({
     }
   };
 
-  const handleFillDemoAdmin = () => {
-    setIdentifier('alexius@pcci.ph');
-    setError(null);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent onClose={onClose} className="max-w-md p-6 sm:p-8">
@@ -125,7 +119,7 @@ export const UnifiedLoginModal: FC<UnifiedLoginModalProps> = ({
               required
               type="text"
               autoFocus
-              placeholder="e.g. alexius@pcci.ph or your nickname"
+              placeholder="e.g. name@example.com, nickname, or pass code"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               className="h-10 text-sm"
@@ -158,19 +152,6 @@ export const UnifiedLoginModal: FC<UnifiedLoginModalProps> = ({
               onChange={(e) => setPassword(e.target.value)}
               className="h-10 text-sm"
             />
-          </div>
-
-          {/* Quick Admin Helper Chip */}
-          <div className="flex items-center justify-between text-[11px] pt-0.5">
-            <button
-              type="button"
-              onClick={handleFillDemoAdmin}
-              className="inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 font-medium transition-colors cursor-pointer"
-            >
-              <UserCheck className="h-3 w-3 text-zinc-400" />
-              <span>Fill Admin (Alexius)</span>
-            </button>
-            <span className="text-zinc-400">Strict database match</span>
           </div>
 
           <Button
