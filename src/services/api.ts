@@ -2872,6 +2872,58 @@ class CampApiService {
   }
 
   /**
+   * Record track play count and sync camper live listening status
+   */
+  async recordTrackPlay(
+    trackId: string,
+    camperId?: string,
+    isPlaying: boolean = true
+  ): Promise<{ success: boolean; play_count?: number; listening_status?: any; error?: string }> {
+    try {
+      const res = await fetch('/api/music/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          track_id: trackId,
+          camper_id: camperId || undefined,
+          is_playing: isPlaying,
+        }),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to record track play';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Update active camper listening status (e.g. pause or stop)
+   */
+  async updateListeningStatus(
+    camperId: string,
+    isPlaying: boolean,
+    trackId?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch('/api/music/play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          camper_id: camperId,
+          track_id: trackId,
+          is_playing: isPlaying,
+        }),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update listening status';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
    * Update an existing track metadata
    */
   async updateMusicTrack(id: string, updates: Partial<MusicTrack>): Promise<{

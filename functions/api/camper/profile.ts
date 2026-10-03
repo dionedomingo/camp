@@ -33,9 +33,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     }
 
     const query = `
-      SELECT cmp.*, c.name as church_name, c.slug as church_slug
+      SELECT cmp.*, c.name as church_name, c.slug as church_slug,
+             cls.track_id as listening_track_id,
+             cls.title as listening_track_title,
+             cls.artist as listening_track_artist,
+             cls.album as listening_track_album,
+             cls.cover_art_url as listening_cover_art_url,
+             cls.is_playing as listening_is_playing,
+             cls.updated_at as listening_updated_at
       FROM campers cmp
       LEFT JOIN churches c ON cmp.church_id = c.id
+      LEFT JOIN camper_listening_status cls ON cmp.id = cls.camper_id
       WHERE cmp.id = ? OR UPPER(cmp.activation_code) = UPPER(?)
       LIMIT 1
     `;
@@ -47,6 +55,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         JSON.stringify({ error: 'Camper profile not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Attach structured listening_status
+    if (camper.listening_track_id) {
+      camper.listening_status = {
+        track_id: camper.listening_track_id,
+        title: camper.listening_track_title,
+        artist: camper.listening_track_artist,
+        album: camper.listening_track_album,
+        cover_art_url: camper.listening_cover_art_url,
+        is_playing: camper.listening_is_playing === 1,
+        updated_at: camper.listening_updated_at,
+      };
+      delete camper.listening_track_id;
+      delete camper.listening_track_title;
+      delete camper.listening_track_artist;
+      delete camper.listening_track_album;
+      delete camper.listening_cover_art_url;
+      delete camper.listening_is_playing;
+      delete camper.listening_updated_at;
+    } else {
+      camper.listening_status = null;
     }
 
     // Parse ministry_interests if needed
@@ -234,18 +264,49 @@ async function handleUpdate(context: EventContext<Env, any, any>): Promise<Respo
         .run();
     }
 
-    // Fetch and return the updated camper record with church details
+    // Fetch and return the updated camper record with church details and listening status
     const updated = await context.env.DB
       .prepare(`
-        SELECT cmp.*, c.name as church_name, c.slug as church_slug
+        SELECT cmp.*, c.name as church_name, c.slug as church_slug,
+               cls.track_id as listening_track_id,
+               cls.title as listening_track_title,
+               cls.artist as listening_track_artist,
+               cls.album as listening_track_album,
+               cls.cover_art_url as listening_cover_art_url,
+               cls.is_playing as listening_is_playing,
+               cls.updated_at as listening_updated_at
         FROM campers cmp
         LEFT JOIN churches c ON cmp.church_id = c.id
+        LEFT JOIN camper_listening_status cls ON cmp.id = cls.camper_id
         WHERE cmp.id = ?
       `)
       .bind(camperId)
       .first<any>();
 
-    if (typeof updated.ministry_interests === 'string') {
+    if (updated) {
+      if (updated.listening_track_id) {
+        updated.listening_status = {
+          track_id: updated.listening_track_id,
+          title: updated.listening_track_title,
+          artist: updated.listening_track_artist,
+          album: updated.listening_track_album,
+          cover_art_url: updated.listening_cover_art_url,
+          is_playing: updated.listening_is_playing === 1,
+          updated_at: updated.listening_updated_at,
+        };
+        delete updated.listening_track_id;
+        delete updated.listening_track_title;
+        delete updated.listening_track_artist;
+        delete updated.listening_track_album;
+        delete updated.listening_cover_art_url;
+        delete updated.listening_is_playing;
+        delete updated.listening_updated_at;
+      } else {
+        updated.listening_status = null;
+      }
+    }
+
+    if (typeof updated?.ministry_interests === 'string') {
       try {
         updated.ministry_interests = JSON.parse(updated.ministry_interests);
       } catch {

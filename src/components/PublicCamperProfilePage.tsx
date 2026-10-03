@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useMemo, type FC } from 'react';
 import {
   Church as ChurchIcon,
   MapPin,
@@ -14,7 +14,10 @@ import {
   PlusCircle,
   Image as ImageIcon,
   MessageCircle,
-  UserCog
+  UserCog,
+  Play,
+  Headphones,
+  Music,
 } from 'lucide-react';
 import { QRCodeCanvas } from './ui/QRCodeCanvas';
 import type {
@@ -30,6 +33,7 @@ import { getBaseUrl } from '../lib/utils';
 import { StoryViewerModal } from './media/StoryViewerModal';
 import { PostDetailModal } from './media/PostDetailModal';
 import { MediaUploadModal } from './media/MediaUploadModal';
+import { useMusicPlayer } from '../context/MusicPlayerContext';
 
 interface PublicCamperProfilePageProps {
   camperId: string | null;
@@ -73,6 +77,41 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
 
   const isOwner = Boolean(currentCamper && camperId && currentCamper.id === camperId);
 
+  // Global Music Player hook for real-time social listening
+  const { currentTrack, isPlaying, playTrackById } = useMusicPlayer();
+
+  const listeningStatus = camper?.listening_status;
+  const isActivelyListening = useMemo(() => {
+    if (!listeningStatus) return false;
+    if (!listeningStatus.is_playing) return false;
+    const updatedTime = new Date(listeningStatus.updated_at).getTime();
+    if (isNaN(updatedTime)) return false;
+    return Date.now() - updatedTime < 15 * 60 * 1000;
+  }, [listeningStatus]);
+
+  const isRecentlyPlayed = useMemo(() => {
+    if (!listeningStatus) return false;
+    if (isActivelyListening) return false;
+    const updatedTime = new Date(listeningStatus.updated_at).getTime();
+    if (isNaN(updatedTime)) return false;
+    return Date.now() - updatedTime < 3 * 60 * 60 * 1000;
+  }, [listeningStatus, isActivelyListening]);
+
+  const activeListening = useMemo(() => {
+    if (isOwner && currentTrack && isPlaying) {
+      return {
+        track_id: currentTrack.id,
+        title: currentTrack.title,
+        artist: currentTrack.artist,
+        album: currentTrack.album,
+        cover_art_url: currentTrack.cover_art_url,
+        is_playing: true,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return listeningStatus;
+  }, [isOwner, currentTrack, isPlaying, listeningStatus]);
+
   // Load camper profile details
   useEffect(() => {
     if (!camperId) return;
@@ -97,8 +136,18 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
         }
       });
 
+    // Light 30s background poll to refresh live listening status
+    const interval = setInterval(() => {
+      apiService.getCamperProfile(camperId).then((res) => {
+        if (isMounted && res.success && res.camper) {
+          setCamper((prev) => (prev ? { ...prev, listening_status: res.camper!.listening_status } : res.camper!));
+        }
+      });
+    }, 30000);
+
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, [camperId]);
 
@@ -324,6 +373,85 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
               </div>
             )}
           </div>
+
+          {/* Active Listening Status Card (Spotify-style live social listening) */}
+          {activeListening && (isActivelyListening || (isOwner && isPlaying) || isRecentlyPlayed) && (
+            <div className={`p-4 rounded-3xl border transition-all shadow-sm animate-fadeIn relative overflow-hidden ${
+              isActivelyListening || (isOwner && isPlaying)
+                ? 'bg-gradient-to-r from-[#0d1f14] via-[#12161a] to-[#121318] border-emerald-500/30 text-white shadow-emerald-950/20'
+                : 'bg-zinc-900 border-white/10 text-white'
+            }`}>
+              <div className="flex items-center justify-between gap-3">
+                {/* Left: Thumbnail & Live Equalizer / Status */}
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                  {/* Thumbnail */}
+                  <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-zinc-800 shrink-0 ring-1 ring-white/10 shadow-sm">
+                    {activeListening.cover_art_url ? (
+                      <img
+                        src={activeListening.cover_art_url}
+                        alt={activeListening.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500">
+                        <Music className="w-6 h-6" />
+                      </div>
+                    )}
+                    {(isActivelyListening || (isOwner && isPlaying)) && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="flex items-end gap-0.5 h-3.5">
+                          <span className="w-0.5 bg-[#1db954] rounded-full animate-bounce h-2.5" />
+                          <span className="w-0.5 bg-[#1db954] rounded-full animate-bounce h-3.5 delay-75" />
+                          <span className="w-0.5 bg-[#1db954] rounded-full animate-bounce h-2 delay-150" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Title & Artist & Badge */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      {(isActivelyListening || (isOwner && isPlaying)) ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#1db954]/20 text-[#1db954] border border-[#1db954]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#1db954] animate-ping" />
+                          <span>Listening Now</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-zinc-400">
+                          <Headphones className="w-3 h-3" />
+                          <span>Recently Played</span>
+                        </span>
+                      )}
+                      <span className="text-[10px] text-zinc-400 font-mono hidden sm:inline">
+                        Camp Praise &amp; Worship
+                      </span>
+                    </div>
+
+                    <h4 className="text-sm font-black text-white truncate leading-tight flex items-center gap-1.5">
+                      <span>{activeListening.title}</span>
+                    </h4>
+                    <p className="text-xs text-zinc-400 truncate mt-0.5">
+                      {activeListening.artist} {activeListening.album ? `• ${activeListening.album}` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Tune In / Listen Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeListening.track_id) {
+                      playTrackById(activeListening.track_id);
+                    }
+                  }}
+                  className="tap-pill shrink-0 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-[#1db954] hover:bg-[#1ed760] text-black font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-[#1db954]/20 transition-all cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-black" />
+                  <span>{isActivelyListening || (isOwner && isPlaying) ? 'Tune In' : 'Play Song'}</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Section 1: Permanent Story Highlights Reel */}
           <div >

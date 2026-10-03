@@ -9,7 +9,7 @@ import {
   type FC,
   type ReactNode,
 } from 'react';
-import type { MusicTrack, MusicPlaylist } from '../types';
+import type { MusicTrack, MusicPlaylist, CamperRegistration } from '../types';
 import { apiService } from '../services/api';
 
 const CACHE_NAME = 'vlc2027-music-v1';
@@ -37,6 +37,8 @@ export interface MusicPlayerContextType {
   
   // Actions
   playTrack: (index: number, customQueue?: MusicTrack[]) => void;
+  playTrackById: (trackId: string) => void;
+  playTrackDirectly: (track: MusicTrack) => void;
   togglePlayPause: () => void;
   nextTrack: () => void;
   prevTrack: () => void;
@@ -57,7 +59,12 @@ export interface MusicPlayerContextType {
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | null>(null);
 
-export const MusicPlayerProvider: FC<{ children: ReactNode }> = ({ children }) => {
+export interface MusicPlayerProviderProps {
+  children: ReactNode;
+  currentCamper?: CamperRegistration | null;
+}
+
+export const MusicPlayerProvider: FC<MusicPlayerProviderProps> = ({ children, currentCamper }) => {
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [playlists, setPlaylists] = useState<MusicPlaylist[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -183,6 +190,85 @@ export const MusicPlayerProvider: FC<{ children: ReactNode }> = ({ children }) =
     },
     [activeQueue, tracks]
   );
+
+  // Play Track by ID
+  const playTrackById = useCallback(
+    (trackId: string) => {
+      const idx = tracks.findIndex((t) => t.id === trackId);
+      if (idx !== -1) {
+        playTrack(idx, tracks);
+      } else {
+        refreshTracks().then(() => {
+          const freshIdx = tracks.findIndex((t) => t.id === trackId);
+          if (freshIdx !== -1) {
+            playTrack(freshIdx, tracks);
+          }
+        });
+      }
+    },
+    [tracks, playTrack, refreshTracks]
+  );
+
+  // Play Track Directly
+  const playTrackDirectly = useCallback(
+    (track: MusicTrack) => {
+      let idx = tracks.findIndex((t) => t.id === track.id);
+      let queue = tracks;
+      if (idx === -1) {
+        queue = [track, ...tracks];
+        setTracks(queue);
+        idx = 0;
+      }
+      playTrack(idx, queue);
+    },
+    [tracks, playTrack]
+  );
+
+  // Sync play counts and camper live listening status
+  const lastRecordedPlayRef = useRef<{ trackId: string; timestamp: number } | null>(null);
+
+  useEffect(() => {
+    if (!currentTrack) return;
+
+    if (isPlaying) {
+      const now = Date.now();
+      const last = lastRecordedPlayRef.current;
+      // Record play count if it's a new track or more than 8 seconds since last record
+      if (!last || last.trackId !== currentTrack.id || now - last.timestamp > 8000) {
+        lastRecordedPlayRef.current = { trackId: currentTrack.id, timestamp: now };
+        apiService.recordTrackPlay(currentTrack.id, currentCamper?.id, true);
+
+        // Optimistically increment play_count in local state
+        setTracks((prev) =>
+          prev.map((t) => (t.id === currentTrack.id ? { ...t, play_count: (t.play_count || 0) + 1 } : t))
+        );
+        setActiveQueue((prev) =>
+          prev.map((t) => (t.id === currentTrack.id ? { ...t, play_count: (t.play_count || 0) + 1 } : t))
+        );
+      }
+    } else {
+      // If paused and camper is logged in, broadcast pause status
+      if (currentCamper?.id && lastRecordedPlayRef.current?.trackId === currentTrack.id) {
+        apiService.updateListeningStatus(currentCamper.id, false, currentTrack.id);
+      }
+    }
+  }, [isPlaying, currentTrack?.id, currentCamper?.id]);
+
+  // Clean up listening status on browser close / page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (currentCamper?.id && isPlaying) {
+        navigator.sendBeacon?.(
+          '/api/music/play',
+          JSON.stringify({ camper_id: currentCamper.id, is_playing: false })
+        );
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentCamper?.id, isPlaying]);
 
   // Next Track
   const nextTrack = useCallback(() => {
@@ -460,6 +546,8 @@ export const MusicPlayerProvider: FC<{ children: ReactNode }> = ({ children }) =
       audioError,
       activeQueue,
       playTrack,
+      playTrackById,
+      playTrackDirectly,
       togglePlayPause,
       nextTrack,
       prevTrack,
@@ -496,6 +584,8 @@ export const MusicPlayerProvider: FC<{ children: ReactNode }> = ({ children }) =
       audioError,
       activeQueue,
       playTrack,
+      playTrackById,
+      playTrackDirectly,
       togglePlayPause,
       nextTrack,
       prevTrack,

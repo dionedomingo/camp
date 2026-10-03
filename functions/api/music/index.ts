@@ -18,6 +18,7 @@ export interface MusicTrack {
   youtube_url?: string | null;
   uploaded_by?: string;
   sort_order: number;
+  play_count?: number;
   is_published: number;
   created_at: string;
 }
@@ -216,7 +217,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       query += ` WHERE ` + conditions.join(' AND ');
     }
 
-    query += ` ORDER BY sort_order ASC, created_at DESC`;
+    const sortBy = url.searchParams.get('sort');
+    if (sortBy === 'popular' || sortBy === 'plays' || sortBy === 'top') {
+      query += ` ORDER BY COALESCE(play_count, 0) DESC, sort_order ASC, created_at DESC`;
+    } else {
+      query += ` ORDER BY sort_order ASC, created_at DESC`;
+    }
 
     let tracks = await context.env.DB.prepare(query).bind(...params).all<MusicTrack>();
 
@@ -279,7 +285,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       .prepare(`SELECT * FROM music_playlists ORDER BY sort_order ASC, created_at ASC`)
       .all<MusicPlaylist>();
 
-    // Map duration if 0 but duration_display is present
+    // Map duration if 0 but duration_display is present, and ensure play_count
     const mappedTracks = (tracks.results || []).map((t) => {
       let dur = t.duration;
       if ((!dur || dur === 0) && t.duration_display) {
@@ -291,6 +297,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       return {
         ...t,
         duration: dur,
+        play_count: t.play_count || 0,
       };
     });
 

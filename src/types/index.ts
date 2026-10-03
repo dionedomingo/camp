@@ -74,7 +74,18 @@ export interface CamperRegistration {
   is_staff?: boolean;
   registrations?: EventRegistration[];
   active_event_name?: string;
+  listening_status?: CamperListeningStatus | null;
   created_at?: string;
+}
+
+export interface CamperListeningStatus {
+  track_id: string;
+  title: string;
+  artist: string;
+  album?: string;
+  cover_art_url?: string | null;
+  is_playing: boolean;
+  updated_at: string;
 }
 
 export interface RegistrationStats {
@@ -420,7 +431,7 @@ export interface PresignUploadResult {
   error?: string;
 }
 
-export type MusicCategory = 'all' | 'worship' | 'praise' | 'anthem' | 'acoustic' | 'reflection';
+export type MusicCategory = 'all' | 'popular' | 'worship' | 'praise' | 'anthem' | 'acoustic' | 'reflection';
 
 export interface MusicTrack {
   id: string;
@@ -437,6 +448,7 @@ export interface MusicTrack {
   youtube_url?: string | null;
   uploaded_by?: string;
   sort_order: number;
+  play_count?: number;
   is_published: number;
   created_at: string;
 }

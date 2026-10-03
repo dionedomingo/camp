@@ -455,7 +455,7 @@ export function App() {
   } as CamperRegistration : null);
 
   return (
-    <MusicPlayerProvider>
+    <MusicPlayerProvider currentCamper={currentCamper}>
       <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
       {/* Top Fixed Header with Schedule, Overview, Churches, and Sign-in */}
       {activeTab !== 'home' && (

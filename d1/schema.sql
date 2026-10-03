@@ -277,12 +277,14 @@ CREATE TABLE IF NOT EXISTS music_tracks (
     youtube_url TEXT,
     uploaded_by TEXT DEFAULT 'admin',
     sort_order INTEGER DEFAULT 0,
+    play_count INTEGER DEFAULT 0,
     is_published INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_music_tracks_published ON music_tracks(is_published, sort_order ASC);
 CREATE INDEX IF NOT EXISTS idx_music_tracks_category ON music_tracks(category);
+CREATE INDEX IF NOT EXISTS idx_music_tracks_popular ON music_tracks(play_count DESC);
 
 -- Curated External Music Playlists (Spotify, YouTube Music)
 CREATE TABLE IF NOT EXISTS music_playlists (
@@ -296,5 +298,23 @@ CREATE TABLE IF NOT EXISTS music_playlists (
     sort_order INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Camper Active Listening Status (Spotify-style live listening social activity)
+CREATE TABLE IF NOT EXISTS camper_listening_status (
+    camper_id TEXT PRIMARY KEY,
+    track_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    artist TEXT NOT NULL,
+    album TEXT,
+    cover_art_url TEXT,
+    is_playing INTEGER DEFAULT 1,
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camper_id) REFERENCES campers(id) ON DELETE CASCADE,
+    FOREIGN KEY (track_id) REFERENCES music_tracks(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_listening_camper ON camper_listening_status(camper_id);
+CREATE INDEX IF NOT EXISTS idx_listening_playing ON camper_listening_status(is_playing, updated_at DESC);
 
 

@@ -130,12 +130,19 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   // Offline caching in-progress tracking
   const [cachingTrackIds, setCachingTrackIds] = useState<string[]>([]);
 
+  // Total camp song plays
+  const totalPlays = useMemo(() => {
+    return tracks.reduce((sum, t) => sum + (t.play_count || 0), 0);
+  }, [tracks]);
+
   // Filtered tracks based on active category, favorites, and search
   const filteredTracks = useMemo(() => {
-    return tracks.filter((track) => {
+    let result = tracks.filter((track) => {
       let matchesCategory = true;
       if (selectedCategory === 'favorites') {
         matchesCategory = favorites.includes(track.id);
+      } else if (selectedCategory === 'popular') {
+        matchesCategory = true;
       } else if (selectedCategory !== 'all') {
         matchesCategory = track.category === selectedCategory;
       }
@@ -149,6 +156,12 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
 
       return matchesCategory && matchesSearch;
     });
+
+    if (selectedCategory === 'popular') {
+      result = [...result].sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
+    }
+
+    return result;
   }, [tracks, selectedCategory, favorites, searchQuery]);
 
   const formatTime = (secs: number) => {
@@ -427,7 +440,7 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                 Camp Audio Player
               </span>
               <span className="text-xs text-zinc-400 font-medium">
-                VLC 2027 &bull; Buag Campgrounds
+                VLC 2027 &bull; {tracks.length} Songs &bull; {totalPlays.toLocaleString()} Total Plays
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
@@ -563,6 +576,7 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
             {(
               [
                 { id: 'all', label: 'All Tracks' },
+                { id: 'popular', label: '🔥 Top Played' },
                 { id: 'favorites', label: `❤️ Favorites (${favorites.length})` },
                 { id: 'anthem', label: 'Anthem' },
                 { id: 'worship', label: 'Worship' },
@@ -698,8 +712,15 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-400 truncate mt-0.5">
-                        {track.artist} &bull; <span className="text-zinc-500">{track.album}</span>
+                      <p className="text-xs text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
+                        <span>{track.artist}</span>
+                        <span>&bull;</span>
+                        <span className="text-zinc-500">{track.album}</span>
+                        {track.play_count !== undefined && track.play_count > 0 && (
+                          <span className="sm:hidden text-[10px] text-zinc-400 font-mono">
+                            &bull; {track.play_count} plays
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -809,6 +830,17 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                       </button>
                     )}
 
+                    {/* Play Count Badge */}
+                    {track.play_count !== undefined && track.play_count > 0 && (
+                      <span
+                        title={`${track.play_count} total plays across camp`}
+                        className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono text-zinc-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 shrink-0"
+                      >
+                        <Play className="w-2.5 h-2.5 fill-zinc-400 text-zinc-400" />
+                        <span>{track.play_count.toLocaleString()}</span>
+                      </span>
+                    )}
+
                     {/* Duration */}
                     <span className="text-xs font-mono text-zinc-400 w-10 text-right">
                       {track.duration_display || '3:30'}
@@ -865,8 +897,16 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                     />
                   </button>
                 </div>
-                <p className="text-[11px] text-zinc-400 truncate mt-0.5">
-                  {currentTrack.artist}
+                <p className="text-[11px] text-zinc-400 truncate mt-0.5 flex items-center gap-1.5">
+                  <span>{currentTrack.artist}</span>
+                  {currentTrack.play_count !== undefined && currentTrack.play_count > 0 && (
+                    <>
+                      <span>&bull;</span>
+                      <span className="text-zinc-500 font-mono text-[10px]">
+                        {currentTrack.play_count.toLocaleString()} plays
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
             </div>
