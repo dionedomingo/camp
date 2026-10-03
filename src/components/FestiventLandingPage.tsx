@@ -11,6 +11,8 @@ import {
   Building2,
   Volume2,
   VolumeX,
+  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
 import type { Church, RegistrationStats, CampEvent, CamperRegistration, AdminUser } from '../types';
 import { formatEventDateRange } from '../lib/utils';
@@ -108,6 +110,7 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [isScrolled, setIsScrolled] = useState(false);
+  const isLoggedIn = Boolean(currentCamper || currentUser);
 
   // Video playback & mute state
   const [isMuted, setIsMuted] = useState(true);
@@ -325,13 +328,33 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
 
           {/* Jumbo CTA Button Group (Festivent Glow style) */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <button
-              onClick={() => onStartSignup(undefined, event || undefined)}
-              className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>{t('hero.registerBtn')}</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            {!isLoggedIn && (
+              <button
+                onClick={() => onStartSignup(undefined, event || undefined)}
+                className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>{t('hero.registerBtn')}</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
+            {currentCamper && onOpenDigitalPass && (
+              <button
+                onClick={onOpenDigitalPass}
+                className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-5 h-5" />
+                <span>{t('drawer.digitalPass')}</span>
+              </button>
+            )}
+            {currentUser && onNavigateToAdmin && (
+              <button
+                onClick={onNavigateToAdmin}
+                className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-bold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-xl shadow-amber-500/30 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <ShieldCheck className="w-5 h-5" />
+                <span>{t('drawer.adminPortal')}</span>
+              </button>
+            )}
             <button
               onClick={onNavigateToSchedule}
               className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-semibold bg-white/10 hover:bg-white/15 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer text-center"
@@ -656,13 +679,33 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => onStartSignup(undefined, event || undefined)}
-              className="w-full sm:w-auto px-10 py-5 rounded-full text-base sm:text-lg font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-3"
-            >
-              <span>{t('footer.registerBtn')}</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            {!isLoggedIn && (
+              <button
+                onClick={() => onStartSignup(undefined, event || undefined)}
+                className="w-full sm:w-auto px-10 py-5 rounded-full text-base sm:text-lg font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-3"
+              >
+                <span>{t('footer.registerBtn')}</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
+            {currentCamper && onOpenDigitalPass && (
+              <button
+                onClick={onOpenDigitalPass}
+                className="w-full sm:w-auto px-10 py-5 rounded-full text-base sm:text-lg font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-2xl shadow-emerald-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-3"
+              >
+                <CheckCircle2 className="w-5 h-5" />
+                <span>{t('drawer.digitalPass')}</span>
+              </button>
+            )}
+            {currentUser && onNavigateToAdmin && (
+              <button
+                onClick={onNavigateToAdmin}
+                className="w-full sm:w-auto px-10 py-5 rounded-full text-base sm:text-lg font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-2xl shadow-amber-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-3"
+              >
+                <ShieldCheck className="w-5 h-5" />
+                <span>{t('drawer.adminPortal')}</span>
+              </button>
+            )}
             <button
               onClick={onNavigateToChurches}
               className="w-full sm:w-auto px-8 py-5 rounded-full text-base font-semibold bg-white/10 hover:bg-white/15 text-white border border-white/20 transition-all cursor-pointer flex items-center justify-center gap-2"

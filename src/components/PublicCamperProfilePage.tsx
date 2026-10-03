@@ -21,7 +21,8 @@ import type {
   CamperRole,
   CommunityPost,
   CommunityStory,
-  AllowedReactionEmoji
+  AllowedReactionEmoji,
+  AdminUser,
 } from '../types';
 import { apiService } from '../services/api';
 import { StoryViewerModal } from './media/StoryViewerModal';
@@ -33,6 +34,7 @@ interface PublicCamperProfilePageProps {
   onBack: () => void;
   onJoinDelegation?: (churchId: string) => void;
   currentCamper?: CamperRegistration | null;
+  currentUser?: AdminUser | null;
 }
 
 export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
@@ -40,7 +42,9 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
   onBack,
   onJoinDelegation,
   currentCamper,
+  currentUser,
 }) => {
+  const isLoggedIn = Boolean(currentCamper || currentUser);
   const [camper, setCamper] = useState<CamperRegistration | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(camperId));
   const [error, setError] = useState<string | null>(null);
@@ -593,7 +597,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
               )}
             </button>
 
-            {onJoinDelegation && camper.church_id && (
+            {!isLoggedIn && onJoinDelegation && camper.church_id && (
               <button
                 type="button"
                 onClick={() => {

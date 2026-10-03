@@ -12,15 +12,17 @@ import {
   Flame,
   Compass,
   Loader2,
-  X
+  X,
+  ShieldCheck
 } from 'lucide-react';
-import type { CampEvent, EventScheduleItem, CamperRegistration, Church, RegistrationStats } from '../types';
+import type { CampEvent, EventScheduleItem, CamperRegistration, Church, RegistrationStats, AdminUser } from '../types';
 import { Badge } from './ui/badge';
 import { apiService } from '../services/api';
 import { ChurchDirectory } from './ChurchDirectory';
 
 interface OfficialSchedulePageProps {
   currentCamper: CamperRegistration | null;
+  currentUser?: AdminUser | null;
   activeChurch: Church | null;
   churches?: Church[];
   stats?: RegistrationStats | null;
@@ -31,10 +33,12 @@ interface OfficialSchedulePageProps {
   onOpenCamperHub: () => void;
   onOpenActivation: () => void;
   onViewCamperProfile?: (camperId: string) => void;
+  onNavigateToAdmin?: () => void;
 }
 
 export const OfficialSchedulePage: FC<OfficialSchedulePageProps> = ({
   currentCamper,
+  currentUser,
   activeChurch,
   churches = [],
   stats = null,
@@ -45,7 +49,9 @@ export const OfficialSchedulePage: FC<OfficialSchedulePageProps> = ({
   onOpenCamperHub,
   onOpenActivation,
   onViewCamperProfile,
+  onNavigateToAdmin,
 }) => {
+  const isLoggedIn = Boolean(currentCamper || currentUser);
   // Events and Active Event State
   const [events, setEvents] = useState<CampEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('vlc-2027');
@@ -219,7 +225,7 @@ export const OfficialSchedulePage: FC<OfficialSchedulePageProps> = ({
 
           {/* Action Row */}
           <div className="pt-2 flex flex-wrap items-center gap-3">
-            {!currentCamper ? (
+            {!isLoggedIn ? (
               <button
                 onClick={() => onStartSignup(activeChurch || undefined)}
                 className="tap-pill inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white hover:bg-slate-100 text-[#0b57d0] font-semibold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
@@ -228,13 +234,21 @@ export const OfficialSchedulePage: FC<OfficialSchedulePageProps> = ({
                 <span>Register for VLC 2027</span>
                 <ArrowRight className="w-4 h-4 text-[#0b57d0]" />
               </button>
-            ) : (
+            ) : currentCamper ? (
               <button
                 onClick={onOpenCamperHub}
                 className="tap-pill inline-flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>View My Digital Camper Pass</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigateToAdmin ? onNavigateToAdmin() : onOpenCamperHub()}
+                className="tap-pill inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Admin Management Portal</span>
               </button>
             )}
 
@@ -553,6 +567,8 @@ export const OfficialSchedulePage: FC<OfficialSchedulePageProps> = ({
           onStartSignup={(c) => onStartSignup(c)}
           onViewCamperProfile={onViewCamperProfile}
           isEmbedded={true}
+          currentCamper={currentCamper}
+          currentUser={currentUser}
         />
       </section>
     </div>

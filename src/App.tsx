@@ -279,6 +279,9 @@ export function App() {
   };
 
   const handleStartSignup = (church?: Church, event?: CampEvent) => {
+    if (currentCamper || currentUser || isAdminAuthenticated) {
+      return;
+    }
     if (church) {
       setActiveChurch(church);
     }
@@ -310,6 +313,9 @@ export function App() {
   };
 
   const handleJoinDelegationFromProfile = (churchId: string) => {
+    if (currentCamper || currentUser || isAdminAuthenticated) {
+      return;
+    }
     handleCloseCamperProfile();
     const church = churches.find((c) => c.id === churchId);
     if (church) {
@@ -484,6 +490,7 @@ export function App() {
         {activeTab === 'schedule' && (
           <OfficialSchedulePage
             currentCamper={currentCamper}
+            currentUser={currentUser}
             activeChurch={activeChurch}
             churches={churches}
             stats={stats}
@@ -497,6 +504,7 @@ export function App() {
             onOpenCamperHub={() => setIsCamperHubOpen(true)}
             onOpenActivation={() => setIsActivationOpen(true)}
             onViewCamperProfile={handleOpenCamperProfile}
+            onNavigateToAdmin={() => navigateToTab('admin')}
           />
         )}
 
@@ -515,6 +523,10 @@ export function App() {
             onNavigateToChurches={() => navigateToTab('churches')}
             onNavigateToSchedule={() => navigateToTab('schedule')}
             onViewCamperProfile={handleOpenCamperProfile}
+            currentCamper={currentCamper}
+            currentUser={currentUser}
+            onOpenDigitalPass={() => setIsDigitalPassModalOpen(true)}
+            onNavigateToAdmin={() => navigateToTab('admin')}
           />
         )}
 
@@ -531,6 +543,8 @@ export function App() {
             }}
             onBackToHome={() => navigateToTab('schedule')}
             onViewCamperProfile={handleOpenCamperProfile}
+            currentCamper={currentCamper}
+            currentUser={currentUser}
           />
         )}
 
@@ -589,6 +603,7 @@ export function App() {
             onBack={handleCloseCamperProfile}
             onJoinDelegation={handleJoinDelegationFromProfile}
             currentCamper={currentCamper}
+            currentUser={currentUser}
           />
         )}
 

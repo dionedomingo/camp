@@ -8,9 +8,10 @@ import {
   User, 
   Users,
   ExternalLink,
-  Share2
+  Share2,
+  CheckCircle2
 } from 'lucide-react';
-import type { Church, RegistrationStats } from '../types';
+import type { Church, RegistrationStats, CamperRegistration, AdminUser } from '../types';
 import { Button } from './ui/button';
 import { ShareChurchModal } from './ShareChurchModal';
 
@@ -23,6 +24,8 @@ interface ChurchDirectoryProps {
   onBackToHome?: () => void;
   onViewCamperProfile?: (camperId: string) => void;
   isEmbedded?: boolean;
+  currentCamper?: CamperRegistration | null;
+  currentUser?: AdminUser | null;
 }
 
 const ROLE_BADGE_STYLES: Record<string, string> = {
@@ -57,7 +60,10 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
   onBackToHome,
   onViewCamperProfile,
   isEmbedded = false,
+  currentCamper,
+  currentUser,
 }) => {
+  const isLoggedIn = Boolean(currentCamper || currentUser);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProvince, setSelectedProvince] = useState('all');
   const [sharingChurch, setSharingChurch] = useState<Church | null>(null);
@@ -379,22 +385,29 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
                     <span>Share</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectChurch?.(church);
-                      onStartSignup(church);
-                    }}
-                    className={`tap-pill flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl font-semibold text-xs transition-colors cursor-pointer shadow-xs ${
-                      isQuotaReached
-                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                        : 'bg-[#0b57d0] hover:bg-[#0842a0] text-white'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-blue-200" />
-                    <span>{isQuotaReached ? 'Join Delegation Waitlist' : 'Register with Delegation'}</span>
-                  </button>
+                  {!isLoggedIn ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectChurch?.(church);
+                        onStartSignup(church);
+                      }}
+                      className={`tap-pill flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl font-semibold text-xs transition-colors cursor-pointer shadow-xs ${
+                        isQuotaReached
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                          : 'bg-[#0b57d0] hover:bg-[#0842a0] text-white'
+                      }`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-blue-200" />
+                      <span>{isQuotaReached ? 'Join Delegation Waitlist' : 'Register with Delegation'}</span>
+                    </button>
+                  ) : currentCamper?.church_id === church.id ? (
+                    <div className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Your Delegation</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );
@@ -423,33 +436,35 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
         )}
       </div>
 
-      {/* Down-prioritized: Independent Delegate Welcoming Banner at the Bottom */}
-      <section className="bg-gradient-to-r from-zinc-50 via-white to-amber-50/50 rounded-3xl p-6 sm:p-7 border border-zinc-200 flex flex-col md:flex-row items-center justify-between gap-5">
-        <div className="flex items-start sm:items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-white text-zinc-700 border border-zinc-200 flex items-center justify-center shadow-2xs shrink-0">
-            <Users className="w-5 h-5 text-[#0b57d0]" />
+      {/* Down-prioritized: Independent Delegate Welcoming Banner at the Bottom (Only for unauthenticated users) */}
+      {!isLoggedIn && (
+        <section className="bg-gradient-to-r from-zinc-50 via-white to-amber-50/50 rounded-3xl p-6 sm:p-7 border border-zinc-200 flex flex-col md:flex-row items-center justify-between gap-5">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-white text-zinc-700 border border-zinc-200 flex items-center justify-center shadow-2xs shrink-0">
+              <Users className="w-5 h-5 text-[#0b57d0]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-bold text-sm text-zinc-900">
+                Not affiliated with a listed PCCI church delegation?
+              </h3>
+              <p className="text-xs text-zinc-600 max-w-xl leading-relaxed">
+                Everyone is welcome at VLC 2027! You can sign up as an Independent / Guest Delegate without needing a church invite link.
+              </p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <h3 className="font-bold text-sm text-zinc-900">
-              Not affiliated with a listed PCCI church delegation?
-            </h3>
-            <p className="text-xs text-zinc-600 max-w-xl leading-relaxed">
-              Everyone is welcome at VLC 2027! You can sign up as an Independent / Guest Delegate without needing a church invite link.
-            </p>
-          </div>
-        </div>
 
-        <button
-          onClick={() => {
-            onSelectChurch?.(openDelegateChurch);
-            onStartSignup(openDelegateChurch);
-          }}
-          className="tap-pill shrink-0 whitespace-nowrap px-5 py-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-2"
-        >
-          <span>Join as Independent Delegate</span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </button>
-      </section>
+          <button
+            onClick={() => {
+              onSelectChurch?.(openDelegateChurch);
+              onStartSignup(openDelegateChurch);
+            }}
+            className="tap-pill shrink-0 whitespace-nowrap px-5 py-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-2"
+          >
+            <span>Join as Independent Delegate</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        </section>
+      )}
 
       {/* Share Modal showing the link and sharing it */}
       <ShareChurchModal

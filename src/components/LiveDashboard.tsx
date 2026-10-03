@@ -10,8 +10,10 @@ import {
   HardDrive,
   AlertCircle,
   CalendarCheck,
+  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
-import type { Church, RegistrationStats, CampEvent } from '../types';
+import type { Church, RegistrationStats, CampEvent, CamperRegistration, AdminUser } from '../types';
 import { apiService } from '../services/api';
 import { getRegistrationStatus, formatDateReadable, formatDateShort, formatEventDateRange } from '../lib/utils';
 import { KeynoteSpeakers } from './KeynoteSpeakers';
@@ -27,6 +29,10 @@ interface LiveDashboardProps {
   onNavigateToChurches: () => void;
   onNavigateToSchedule?: () => void;
   onViewCamperProfile?: (camperId: string) => void;
+  currentCamper?: CamperRegistration | null;
+  currentUser?: AdminUser | null;
+  onOpenDigitalPass?: () => void;
+  onNavigateToAdmin?: () => void;
 }
 
 export const LiveDashboard: FC<LiveDashboardProps> = ({
@@ -39,7 +45,12 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
   onNavigateToChurches,
   onNavigateToSchedule,
   onViewCamperProfile,
+  currentCamper,
+  currentUser,
+  onOpenDigitalPass,
+  onNavigateToAdmin,
 }) => {
+  const isLoggedIn = Boolean(currentCamper || currentUser);
   const [fetchedEvent, setFetchedEvent] = useState<CampEvent | null>(null);
   const event = propEvent || fetchedEvent;
 
@@ -192,34 +203,52 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
 
           {/* Google I/O Minimalist Call to Action Buttons */}
           <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {regInfo.isAllowed ? (
+            {!isLoggedIn ? (
+              regInfo.isAllowed ? (
+                <button
+                  onClick={() => onStartSignup(activeChurch || undefined)}
+                  className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-white hover:bg-slate-100 text-[#0b57d0] font-semibold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-[#0b57d0]" />
+                  <span>Register Now {activeChurch ? `(${activeChurch.name.split(' ')[0]})` : ''}</span>
+                  <ArrowRight className="w-4 h-4 text-[#0b57d0]" />
+                </button>
+              ) : regInfo.status === 'upcoming' ? (
+                <button
+                  onClick={() => alert(`Registration for ${event?.name || 'VLC 2027'} officially opens on ${formatDateReadable(event?.registration_start_date)} leading up to the camp event.`)}
+                  className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-sm shadow-lg transition-all cursor-pointer"
+                  title={`Registration opens on ${formatDateReadable(event?.registration_start_date)}`}
+                >
+                  <Clock className="w-4 h-4 text-zinc-950" />
+                  <span>Registration Opens {formatDateShort(event?.registration_start_date)}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => alert(`Registration for ${event?.name || 'VLC 2027'} closed on ${formatDateReadable(event?.registration_end_date)} leading up to the camp event.`)}
+                  className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-zinc-800/80 hover:bg-zinc-800 text-zinc-400 font-semibold text-sm border border-zinc-700 transition-all cursor-pointer"
+                  title={`Registration closed on ${formatDateReadable(event?.registration_end_date)}`}
+                >
+                  <AlertCircle className="w-4 h-4 text-zinc-400" />
+                  <span>Registration Closed</span>
+                </button>
+              )
+            ) : currentCamper && onOpenDigitalPass ? (
               <button
-                onClick={() => onStartSignup(activeChurch || undefined)}
-                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-white hover:bg-slate-100 text-[#0b57d0] font-semibold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                onClick={onOpenDigitalPass}
+                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer"
               >
-                <Sparkles className="w-4 h-4 text-[#0b57d0]" />
-                <span>Register Now {activeChurch ? `(${activeChurch.name.split(' ')[0]})` : ''}</span>
-                <ArrowRight className="w-4 h-4 text-[#0b57d0]" />
+                <CheckCircle2 className="w-4 h-4" />
+                <span>View My Digital Pass</span>
               </button>
-            ) : regInfo.status === 'upcoming' ? (
+            ) : currentUser && onNavigateToAdmin ? (
               <button
-                onClick={() => alert(`Registration for ${event?.name || 'VLC 2027'} officially opens on ${formatDateReadable(event?.registration_start_date)} leading up to the camp event.`)}
-                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-sm shadow-lg transition-all cursor-pointer"
-                title={`Registration opens on ${formatDateReadable(event?.registration_start_date)}`}
+                onClick={onNavigateToAdmin}
+                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer"
               >
-                <Clock className="w-4 h-4 text-zinc-950" />
-                <span>Registration Opens {formatDateShort(event?.registration_start_date)}</span>
+                <ShieldCheck className="w-4 h-4" />
+                <span>Admin Management Portal</span>
               </button>
-            ) : (
-              <button
-                onClick={() => alert(`Registration for ${event?.name || 'VLC 2027'} closed on ${formatDateReadable(event?.registration_end_date)} leading up to the camp event.`)}
-                className="tap-pill inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-zinc-800/80 hover:bg-zinc-800 text-zinc-400 font-semibold text-sm border border-zinc-700 transition-all cursor-pointer"
-                title={`Registration closed on ${formatDateReadable(event?.registration_end_date)}`}
-              >
-                <AlertCircle className="w-4 h-4 text-zinc-400" />
-                <span>Registration Closed</span>
-              </button>
-            )}
+            ) : null}
 
             <a
               href="#speakers"
@@ -246,7 +275,7 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
               <span>Church Delegations &amp; Links</span>
             </button>
 
-            {!isIndependent && regInfo.isAllowed && (
+            {!isLoggedIn && !isIndependent && regInfo.isAllowed && (
               <button
                 onClick={() => {
                   const openChurch: Church = {
@@ -341,6 +370,8 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
           onStartSignup={onStartSignup}
           onViewCamperProfile={onViewCamperProfile}
           isEmbedded={true}
+          currentCamper={currentCamper}
+          currentUser={currentUser}
         />
       </section>
     </div>
