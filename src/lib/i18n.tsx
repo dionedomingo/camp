@@ -19,7 +19,7 @@ export const translations = {
   en: {
     // Header Navigation
     'nav.home': 'Home',
-    'nav.schedule': 'Official Schedule',
+    'nav.schedule': 'Schedule',
     'nav.overview': 'Camp Overview',
     'nav.delegations': 'Church Delegations',
     'nav.feed': 'Community Feed',
@@ -40,7 +40,7 @@ export const translations = {
     'hero.titleLine2': 'Camp 2027',
     'hero.tagline': 'Awakening a generation of bold spiritual leaders, worshipers, and world-changers across Northern Luzon. 4 unforgettable days of apostolic fire, intimate worship, and deep fellowship.',
     'hero.registerBtn': 'Register Your Delegate Pass',
-    'hero.itineraryBtn': 'Official Itinerary',
+    'hero.itineraryBtn': 'Schedule',
     'hero.countdownTitle': 'Countdown to Camp Opening',
     'hero.days': 'Days',
     'hero.hours': 'Hours',
@@ -103,7 +103,7 @@ export const translations = {
     'footer.delegationsBtn': 'Browse Church Delegations',
     'footer.copyright': '© 2027 Pentecostal Christian Church Inc. • Victory Leadership Camp',
     'footer.checkIn': 'On-Arrival Fast Check-In',
-    'footer.schedule': 'Official Schedule',
+    'footer.schedule': 'Schedule',
     'footer.churches': 'Church Directory',
 
     // User Profile Right Drawer
@@ -124,7 +124,7 @@ export const translations = {
   tl: {
     // Header Navigation
     'nav.home': 'Tahanan',
-    'nav.schedule': 'Opisyal na Iskedyul',
+    'nav.schedule': 'Iskedyul',
     'nav.overview': 'Pangkalahatang Tanaw',
     'nav.delegations': 'Mga Delegasyon ng Simbahan',
     'nav.feed': 'Feed ng Komunidad',
@@ -145,7 +145,7 @@ export const translations = {
     'hero.titleLine2': 'Camp 2027',
     'hero.tagline': 'Paggising sa henerasyon ng matatapang na espirituwal na pinuno, mananamba, at tagapagbago ng lipunan sa Northern Luzon. 4 na araw ng apoy ng Espiritu Santo, taos-pusong pagsamba, at malalim na samahan.',
     'hero.registerBtn': 'Kumuha ng Delegate Pass',
-    'hero.itineraryBtn': 'Opisyal na Iskedyul',
+    'hero.itineraryBtn': 'Iskedyul',
     'hero.countdownTitle': 'Pagbibilang Bago ang Pagbubukas ng Kampo',
     'hero.days': 'Araw',
     'hero.hours': 'Oras',
@@ -208,7 +208,7 @@ export const translations = {
     'footer.delegationsBtn': 'Tingnan ang Delegasyon ng mga Simbahan',
     'footer.copyright': '© 2027 Pentecostal Christian Church Inc. • Victory Leadership Camp',
     'footer.checkIn': 'Mabilisang Check-In sa Pagdating',
-    'footer.schedule': 'Opisyal na Iskedyul',
+    'footer.schedule': 'Iskedyul',
     'footer.churches': 'Listahan ng Simbahan',
 
     // User Profile Right Drawer
@@ -229,7 +229,7 @@ export const translations = {
   ilo: {
     // Header Navigation
     'nav.home': 'Balay',
-    'nav.schedule': 'Opisial nga Iskedyul',
+    'nav.schedule': 'Iskedyul',
     'nav.overview': 'Pakabuklan ti Kampo',
     'nav.delegations': 'Delegasion ti Simbaan',
     'nav.feed': 'Paset ti Komunidad',
@@ -250,7 +250,7 @@ export const translations = {
     'hero.titleLine2': 'Camp 2027',
     'hero.tagline': 'Panangriing iti henerasion dagiti maingel nga espiritual a mangidadaulo, agdaydayaw, ken mangbalbaliw iti kagimongan iti Northern Luzon. 4 nga aldaw ti apoy ti Espiritu Santo, napudno a panagdayaw, ken nasged a panagkakadua.',
     'hero.registerBtn': 'Alaem ti Delegate Pass Mo',
-    'hero.itineraryBtn': 'Opisial nga Iskedyul',
+    'hero.itineraryBtn': 'Iskedyul',
     'hero.countdownTitle': 'Panagbilang agingga Lukat ti Kampo',
     'hero.days': 'Aldaw',
     'hero.hours': 'Oras',
@@ -313,7 +313,7 @@ export const translations = {
     'footer.delegationsBtn': 'Kitaen dagiti Delegasion ti Simbaan',
     'footer.copyright': '© 2027 Pentecostal Christian Church Inc. • Victory Leadership Camp',
     'footer.checkIn': 'Napartak a Check-In iti Idadanon',
-    'footer.schedule': 'Opisial nga Iskedyul',
+    'footer.schedule': 'Iskedyul',
     'footer.churches': 'Listaan ti Simbaan',
 
     // User Profile Right Drawer

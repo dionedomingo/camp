@@ -790,7 +790,7 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
             {onNavigateToSchedule && (
               <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center justify-between gap-2">
                 <div className="text-[11px] text-blue-900 leading-snug">
-                  <strong>Moved to Homepage:</strong> The full Official Schedule is now available directly on the homepage.
+                  <strong>Moved to Homepage:</strong> The full schedule is now available directly on the homepage.
                 </div>
                 <Button
                   size="sm"
@@ -810,7 +810,7 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
             <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-200 font-semibold text-zinc-800">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#0b57d0]" />
-                <span>{activeCamperPass.active_event_name || 'VLC 2027'} &bull; Official Schedule</span>
+                <span>{activeCamperPass.active_event_name || 'VLC 2027'} &bull; Schedule</span>
               </div>
               {isLoadingSchedule && (
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />

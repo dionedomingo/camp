@@ -110,7 +110,7 @@ export const ChurchDirectory: FC<ChurchDirectoryProps> = ({
                 className="text-xs text-zinc-600 hover:text-zinc-900 gap-1.5 -ml-2 cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Official Schedule</span>
+                <span>Back to Schedule</span>
               </Button>
             )}
           </div>

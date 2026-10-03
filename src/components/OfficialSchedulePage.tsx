@@ -192,7 +192,7 @@ export const OfficialSchedulePage: FC<OfficialSchedulePageProps> = ({
           {/* Heading */}
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-              Official Schedule &amp; Camp Gatherings
+              Schedule &amp; Camp Gatherings
             </h1>
             <p className="text-base sm:text-lg text-slate-200 max-w-3xl leading-relaxed font-light">
               Explore the confirmed 4-day session program for <strong>Vision &amp; Leadership Camp 2027: Arise &amp; Shine</strong>, browse upcoming national assemblies, or verify your delegate pass.

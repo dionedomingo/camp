@@ -263,7 +263,7 @@ export const LiveDashboard: FC<LiveDashboardProps> = ({
                 className="tap-pill inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white font-medium text-sm border border-white/25 transition-all text-center cursor-pointer"
               >
                 <Calendar className="w-4 h-4 text-yellow-300" />
-                <span>Official Schedule &amp; Gatherings</span>
+                <span>Schedule &amp; Gatherings</span>
               </button>
             )}
 
