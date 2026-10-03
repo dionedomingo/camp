@@ -317,4 +317,113 @@ CREATE TABLE IF NOT EXISTS camper_listening_status (
 CREATE INDEX IF NOT EXISTS idx_listening_camper ON camper_listening_status(camper_id);
 CREATE INDEX IF NOT EXISTS idx_listening_playing ON camper_listening_status(is_playing, updated_at DESC);
 
+-- Prayer Requests table: Petitions, intercession needs, and resolution status
+CREATE TABLE IF NOT EXISTS prayer_requests (
+    id TEXT PRIMARY KEY,
+    camper_id TEXT NOT NULL,
+    event_id TEXT DEFAULT 'vlc-2027',
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL CHECK(category IN (
+        'spiritual_growth', 
+        'healing_health', 
+        'family_personal', 
+        'academic_career', 
+        'salvation_evangelism', 
+        'camp_breakthrough', 
+        'general'
+    )),
+    scripture_reference TEXT,
+    privacy_level TEXT NOT NULL DEFAULT 'public' CHECK(privacy_level IN (
+        'public',
+        'church_delegation',
+        'pastors_counselors',
+        'anonymous_author'
+    )),
+    is_anonymous INTEGER DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'answered', 'archived')),
+    prayer_count INTEGER DEFAULT 0,
+    answered_at DATETIME,
+    resolution_notes TEXT,
+    linked_testimony_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camper_id) REFERENCES campers(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_prayers_status_created ON prayer_requests(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_prayers_camper ON prayer_requests(camper_id);
+CREATE INDEX IF NOT EXISTS idx_prayers_privacy ON prayer_requests(privacy_level, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_prayers_category ON prayer_requests(category);
+CREATE INDEX IF NOT EXISTS idx_prayers_event ON prayer_requests(event_id, status);
+
+-- Prayer Participants table: Avatar reaction tracking & intercessors
+CREATE TABLE IF NOT EXISTS prayer_participants (
+    id TEXT PRIMARY KEY,
+    prayer_id TEXT NOT NULL,
+    camper_id TEXT NOT NULL,
+    reaction_type TEXT DEFAULT '🙏' CHECK(reaction_type IN ('🙏', '❤️', '🙌', '🕊️', '🔥')),
+    prayer_count INTEGER DEFAULT 1,
+    is_anonymous INTEGER DEFAULT 0,
+    last_prayed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (prayer_id) REFERENCES prayer_requests(id) ON DELETE CASCADE,
+    FOREIGN KEY (camper_id) REFERENCES campers(id) ON DELETE CASCADE,
+    UNIQUE(prayer_id, camper_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_prayer_participants_prayer ON prayer_participants(prayer_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_prayer_participants_camper ON prayer_participants(camper_id);
+CREATE INDEX IF NOT EXISTS idx_prayer_participants_reaction ON prayer_participants(prayer_id, reaction_type);
+
+-- Testimonies table: Answered prayer praise reports & camp stories
+CREATE TABLE IF NOT EXISTS testimonies (
+    id TEXT PRIMARY KEY,
+    camper_id TEXT NOT NULL,
+    prayer_request_id TEXT,
+    event_id TEXT DEFAULT 'vlc-2027',
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    scripture_reference TEXT,
+    media_url TEXT,
+    category TEXT DEFAULT 'general' CHECK(category IN (
+        'answered_prayer', 
+        'salvation', 
+        'healing', 
+        'spiritual_milestone', 
+        'delegation_story', 
+        'general'
+    )),
+    praise_count INTEGER DEFAULT 0,
+    is_featured INTEGER DEFAULT 0,
+    is_anonymous INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (camper_id) REFERENCES campers(id) ON DELETE CASCADE,
+    FOREIGN KEY (prayer_request_id) REFERENCES prayer_requests(id) ON DELETE SET NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_testimonies_created ON testimonies(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_testimonies_camper ON testimonies(camper_id);
+CREATE INDEX IF NOT EXISTS idx_testimonies_prayer ON testimonies(prayer_request_id);
+CREATE INDEX IF NOT EXISTS idx_testimonies_featured ON testimonies(is_featured, created_at DESC);
+
+-- Testimony Reactions table
+CREATE TABLE IF NOT EXISTS testimony_reactions (
+    id TEXT PRIMARY KEY,
+    testimony_id TEXT NOT NULL,
+    camper_id TEXT NOT NULL,
+    reaction_type TEXT DEFAULT '🙌' CHECK(reaction_type IN ('🙌', '❤️', '🔥', '🎉', '🙏')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (testimony_id) REFERENCES testimonies(id) ON DELETE CASCADE,
+    FOREIGN KEY (camper_id) REFERENCES campers(id) ON DELETE CASCADE,
+    UNIQUE(testimony_id, camper_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_testimony_reactions_testimony ON testimony_reactions(testimony_id);
+CREATE INDEX IF NOT EXISTS idx_testimony_reactions_camper ON testimony_reactions(camper_id);
+
+
 

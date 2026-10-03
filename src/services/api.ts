@@ -18,7 +18,13 @@ import type {
   AllowedReactionEmoji,
   PresignUploadResult,
   MusicTrack,
-  MusicPlaylist
+  MusicPlaylist,
+  PrayerRequest,
+  PrayerParticipantDetail,
+  Testimony,
+  PrayerCategory,
+  PrayerPrivacyLevel,
+  TestimonyCategory
 } from '../types';
 
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
@@ -3015,6 +3021,365 @@ class CampApiService {
       return JSON.parse(raw);
     } catch {
       return [...INITIAL_ADMIN_USERS];
+    }
+  }
+
+  // ==========================================
+  // PRAYER REQUESTS & INTERCESSION
+  // ==========================================
+
+  /**
+   * Get paginated prayer requests with privacy and tab filtering
+   */
+  async getPrayerRequests(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    category?: string;
+    filter?: string;
+    viewerId?: string;
+  } = {}): Promise<{
+    success: boolean;
+    prayers?: PrayerRequest[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    try {
+      const search = new URLSearchParams();
+      if (params.page) search.set('page', params.page.toString());
+      if (params.limit) search.set('limit', params.limit.toString());
+      if (params.status) search.set('status', params.status);
+      if (params.category) search.set('category', params.category);
+      if (params.filter) search.set('filter', params.filter);
+      if (params.viewerId) search.set('viewer_id', params.viewerId);
+
+      const headers: Record<string, string> = {};
+      if (params.viewerId) headers['x-camper-id'] = params.viewerId;
+
+      const res = await fetch(`/api/prayers?${search.toString()}`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch prayer requests';
+      return { success: false, prayers: [], error: msg };
+    }
+  }
+
+  /**
+   * Create a new prayer request
+   */
+  async createPrayerRequest(
+    payload: {
+      title: string;
+      description: string;
+      category?: PrayerCategory;
+      scripture_reference?: string;
+      privacy_level?: PrayerPrivacyLevel;
+      is_anonymous?: boolean;
+    },
+    camperId: string
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    prayer?: PrayerRequest;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch('/api/prayers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': camperId,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create prayer request';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Get single prayer request details
+   */
+  async getPrayerRequest(id: string, viewerId?: string): Promise<{
+    success: boolean;
+    prayer?: PrayerRequest;
+    error?: string;
+  }> {
+    try {
+      const headers: Record<string, string> = {};
+      if (viewerId) headers['x-camper-id'] = viewerId;
+
+      const res = await fetch(`/api/prayers/${id}`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch prayer';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Stand in prayer ("I Prayed" action with daily re-praying support)
+   */
+  async prayForRequest(
+    id: string,
+    camperId: string,
+    reactionType: string = '🙏',
+    isAnonymous: boolean = false
+  ): Promise<{
+    success: boolean;
+    action?: string;
+    message?: string;
+    prayer_count?: number;
+    has_prayed?: boolean;
+    has_prayed_today?: boolean;
+    user_prayer_count?: number;
+    recent_participants?: any[];
+    error?: string;
+  }> {
+    try {
+      const res = await fetch(`/api/prayers/${id}/pray`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': camperId,
+        },
+        body: JSON.stringify({ reaction_type: reactionType, is_anonymous: isAnonymous }),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to stand in prayer';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Mark a prayer request as "God has answered!"
+   */
+  async resolvePrayerRequest(
+    id: string,
+    camperId: string,
+    payload: {
+      resolution_notes: string;
+      create_testimony?: boolean;
+      testimony_title?: string;
+      testimony_media_url?: string;
+    }
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    status?: string;
+    answered_at?: string;
+    resolution_notes?: string;
+    linked_testimony_id?: string;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch(`/api/prayers/${id}/resolve`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': camperId,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to mark prayer as answered';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Get full list of intercessors who prayed for a request
+   */
+  async getPrayerParticipants(id: string): Promise<{
+    success: boolean;
+    prayer_id?: string;
+    prayer_title?: string;
+    total_prayers?: number;
+    participants_count?: number;
+    participants?: PrayerParticipantDetail[];
+    error?: string;
+  }> {
+    try {
+      const res = await fetch(`/api/prayers/${id}/participants`);
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch prayer participants';
+      return { success: false, participants: [], error: msg };
+    }
+  }
+
+  /**
+   * Delete prayer request
+   */
+  async deletePrayerRequest(id: string, camperId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/prayers/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-camper-id': camperId,
+        },
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete prayer request';
+      return { success: false, error: msg };
+    }
+  }
+
+  // ==========================================
+  // TESTIMONIES & PRAISE REPORTS
+  // ==========================================
+
+  /**
+   * Get paginated testimonies (praise reports)
+   */
+  async getTestimonies(params: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    viewerId?: string;
+  } = {}): Promise<{
+    success: boolean;
+    testimonies?: Testimony[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    try {
+      const search = new URLSearchParams();
+      if (params.page) search.set('page', params.page.toString());
+      if (params.limit) search.set('limit', params.limit.toString());
+      if (params.category) search.set('category', params.category);
+      if (params.viewerId) search.set('viewer_id', params.viewerId);
+
+      const headers: Record<string, string> = {};
+      if (params.viewerId) headers['x-camper-id'] = params.viewerId;
+
+      const res = await fetch(`/api/testimonies?${search.toString()}`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch testimonies';
+      return { success: false, testimonies: [], error: msg };
+    }
+  }
+
+  /**
+   * Create a new testimony
+   */
+  async createTestimony(
+    payload: {
+      title: string;
+      content: string;
+      category?: TestimonyCategory;
+      scripture_reference?: string;
+      media_url?: string;
+      prayer_request_id?: string;
+      is_anonymous?: boolean;
+    },
+    camperId: string
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    testimony?: Testimony;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch('/api/testimonies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': camperId,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create testimony';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Get single testimony details
+   */
+  async getTestimony(id: string, viewerId?: string): Promise<{
+    success: boolean;
+    testimony?: Testimony;
+    error?: string;
+  }> {
+    try {
+      const headers: Record<string, string> = {};
+      if (viewerId) headers['x-camper-id'] = viewerId;
+
+      const res = await fetch(`/api/testimonies/${id}`, { headers });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch testimony';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Toggle praise reaction on a testimony
+   */
+  async toggleTestimonyReaction(
+    id: string,
+    camperId: string,
+    emoji: string = '🙌'
+  ): Promise<{
+    success: boolean;
+    action?: string;
+    user_reaction?: string | null;
+    has_praised?: boolean;
+    praise_count?: number;
+    error?: string;
+  }> {
+    try {
+      const res = await fetch(`/api/testimonies/${id}/reactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-camper-id': camperId,
+        },
+        body: JSON.stringify({ reaction_type: emoji }),
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to react to testimony';
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Delete testimony
+   */
+  async deleteTestimony(id: string, camperId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/testimonies/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-camper-id': camperId,
+        },
+      });
+      const data = await res.json() as any;
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete testimony';
+      return { success: false, error: msg };
     }
   }
 

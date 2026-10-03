@@ -465,3 +465,103 @@ export interface MusicPlaylist {
   created_at: string;
 }
 
+export type PrayerCategory = 
+  | 'spiritual_growth'
+  | 'healing_health'
+  | 'family_personal'
+  | 'academic_career'
+  | 'salvation_evangelism'
+  | 'camp_breakthrough'
+  | 'general';
+
+export type PrayerPrivacyLevel = 
+  | 'public'
+  | 'church_delegation'
+  | 'pastors_counselors'
+  | 'anonymous_author';
+
+export type PrayerStatus = 'open' | 'answered' | 'archived';
+
+export interface PrayerParticipantSummary {
+  camper_id: string | null;
+  nickname: string;
+  selfie_url?: string | null;
+  church_name?: string | null;
+  prayer_count?: number;
+  last_prayed_at: string;
+}
+
+export interface PrayerParticipantDetail {
+  id: string;
+  camper_id: string | null;
+  nickname: string;
+  role: string;
+  selfie_url?: string | null;
+  church_name?: string | null;
+  reaction_type: string;
+  prayer_count: number;
+  last_prayed_at: string;
+  created_at: string;
+}
+
+export interface PrayerRequest {
+  id: string;
+  camper_id: string | null;
+  event_id?: string;
+  title: string;
+  description: string;
+  category: PrayerCategory;
+  scripture_reference?: string | null;
+  privacy_level: PrayerPrivacyLevel;
+  is_anonymous: boolean;
+  status: PrayerStatus;
+  prayer_count: number;
+  answered_at?: string | null;
+  resolution_notes?: string | null;
+  linked_testimony_id?: string | null;
+  created_at: string;
+  updated_at: string;
+  author: CommunityCamperSummary;
+  has_prayed: boolean;
+  has_prayed_today: boolean;
+  user_prayer_count: number;
+  recent_participants: PrayerParticipantSummary[];
+  is_owner?: boolean;
+}
+
+export type TestimonyCategory = 
+  | 'answered_prayer'
+  | 'salvation'
+  | 'healing'
+  | 'spiritual_milestone'
+  | 'delegation_story'
+  | 'general';
+
+export interface Testimony {
+  id: string;
+  camper_id: string | null;
+  prayer_request_id?: string | null;
+  event_id?: string;
+  title: string;
+  content: string;
+  scripture_reference?: string | null;
+  media_url?: string | null;
+  category: TestimonyCategory;
+  praise_count: number;
+  is_featured: boolean;
+  is_anonymous: boolean;
+  created_at: string;
+  updated_at: string;
+  author: CommunityCamperSummary;
+  user_reaction?: string | null;
+  has_praised?: boolean;
+  linked_prayer?: {
+    id: string;
+    title: string;
+    prayer_count: number;
+    answered_at?: string | null;
+  } | null;
+  is_owner?: boolean;
+}
+
+
