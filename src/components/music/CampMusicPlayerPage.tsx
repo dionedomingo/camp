@@ -31,12 +31,25 @@ import {
   Pencil,
   Loader2,
   ChevronDown,
-  Minimize2
+  Minimize2,
+  Video,
+  Copy,
+  Check
 } from 'lucide-react';
 import type { CamperRegistration, AdminUser, MusicTrack, MusicCategory } from '../../types';
 import { apiService } from '../../services/api';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import { UpNextQueueDrawer } from './UpNextQueueDrawer';
+
+/**
+ * Extracts YouTube video ID from various YouTube URL formats
+ */
+export function extractYouTubeId(url?: string | null): string | null {
+  if (!url) return null;
+  const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/)|music\.youtube\.com\/watch\?v=)([\w-]{11})/i;
+  const match = url.match(regExp);
+  return match && match[1] ? match[1] : null;
+}
 
 interface CampMusicPlayerPageProps {
   currentCamper: CamperRegistration | null;
@@ -106,6 +119,28 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isLyricsModalOpen, setIsLyricsModalOpen] = useState(false);
   const [lyricsTrack, setLyricsTrack] = useState<MusicTrack | null>(null);
+  const [songMediaMode, setSongMediaMode] = useState<'audio' | 'video'>('audio');
+  const [isLyricsCopied, setIsLyricsCopied] = useState(false);
+
+  const handleOpenSongDetails = (track: MusicTrack) => {
+    setLyricsTrack(track);
+    setSongMediaMode('audio');
+    setIsLyricsCopied(false);
+    setIsLyricsModalOpen(true);
+  };
+
+  const handleCloseSongDetails = () => {
+    setIsLyricsModalOpen(false);
+    setSongMediaMode('audio');
+  };
+
+  const handleToggleMediaMode = (mode: 'audio' | 'video') => {
+    if (mode === 'video' && isPlaying) {
+      // Pause camp audio so audio does not clash with the YouTube video
+      togglePlayPause();
+    }
+    setSongMediaMode(mode);
+  };
 
   // Edit Track Modal state (Admin)
   const [editingTrack, setEditingTrack] = useState<MusicTrack | null>(null);
@@ -128,7 +163,11 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        const hasOpenModal = document.querySelector('[role="dialog"]') || isUploadModalOpen || isLyricsModalOpen || Boolean(editingTrack);
+        if (isLyricsModalOpen) {
+          handleCloseSongDetails();
+          return;
+        }
+        const hasOpenModal = document.querySelector('[role="dialog"]') || isUploadModalOpen || Boolean(editingTrack);
         if (!hasOpenModal && onMinimize) {
           onMinimize();
         }
@@ -644,19 +683,19 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
               <span>Queue</span>
             </button>
 
-            {/* Lyrics Button */}
+            {/* Lyrics & Video Button */}
             <button
               onClick={() => {
                 if (currentTrack) {
-                  setLyricsTrack(currentTrack);
-                  setIsLyricsModalOpen(true);
+                  handleOpenSongDetails(currentTrack);
                 }
               }}
               disabled={!currentTrack}
               className="px-3.5 py-2 rounded-full bg-white/10 hover:bg-white/15 text-zinc-200 text-xs font-semibold border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              title="View lyrics, video & details"
             >
               <Mic2 className="w-3.5 h-3.5 text-blue-400" />
-              <span>Lyrics</span>
+              <span>Lyrics &amp; Video</span>
             </button>
 
             {/* Downsized External Playlist Pills */}
@@ -774,10 +813,17 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
               return (
                 <div
                   key={track.id}
-                  onClick={() => playTrack(idx, filteredTracks)}
+                  onClick={() => {
+                    if (isCurrentPlaying) {
+                      handleOpenSongDetails(track);
+                    } else {
+                      playTrack(idx, filteredTracks);
+                    }
+                  }}
+                  title={isCurrentPlaying ? "Currently playing • Click to view lyrics, video & details" : `Play ${track.title}`}
                   className={`group px-3 sm:px-4 py-3 rounded-2xl flex items-center justify-between gap-3 sm:gap-4 transition-all cursor-pointer ${
                     isCurrentPlaying
-                      ? 'bg-white/10 text-white'
+                      ? 'bg-white/10 text-white ring-1 ring-[#1db954]/30 shadow-md'
                       : 'hover:bg-white/5 text-zinc-300'
                   }`}
                 >
@@ -822,6 +868,12 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                         >
                           {track.title}
                         </h4>
+                        {isCurrentPlaying && (
+                          <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#1db954]/15 text-[#1db954] border border-[#1db954]/30 animate-pulse">
+                            <Mic2 className="w-2.5 h-2.5" />
+                            <span>Lyrics &amp; Video</span>
+                          </span>
+                        )}
                         {isOffline && (
                           <span
                             title="Cached for offline camp listening"
@@ -912,15 +964,14 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                       <Download className="w-4 h-4" />
                     </button>
 
-                    {/* Lyrics Preview Button */}
-                    {track.lyrics && (
+                    {/* Lyrics, Video & Details Preview Button */}
+                    {(track.lyrics || track.youtube_url || track.spotify_url) && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLyricsTrack(track);
-                          setIsLyricsModalOpen(true);
+                          handleOpenSongDetails(track);
                         }}
-                        title="View song lyrics"
+                        title="View song lyrics, video & details"
                         className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                       >
                         <Mic2 className="w-4 h-4" />
@@ -1010,12 +1061,16 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
             
             {/* 1. Left Section: Track Info & Cover */}
             <div className="flex items-center gap-3 w-1/4 min-w-[140px] sm:min-w-[200px]">
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 shrink-0 ring-1 ring-white/10">
+              <div
+                onClick={() => currentTrack && handleOpenSongDetails(currentTrack)}
+                className="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 shrink-0 ring-1 ring-white/10 hover:ring-[#1db954] transition-all cursor-pointer group"
+                title="View lyrics, video & details"
+              >
                 {currentTrack.cover_art_url ? (
                   <img
                     src={currentTrack.cover_art_url}
                     alt={currentTrack.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500">
@@ -1031,11 +1086,18 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
 
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs sm:text-sm font-bold text-white truncate leading-tight hover:underline cursor-pointer">
+                  <h4
+                    onClick={() => currentTrack && handleOpenSongDetails(currentTrack)}
+                    className="text-xs sm:text-sm font-bold text-white truncate leading-tight hover:underline hover:text-[#1db954] cursor-pointer transition-colors"
+                    title="View lyrics, video & details"
+                  >
                     {currentTrack.title}
                   </h4>
                   <button
-                    onClick={() => toggleFavorite(currentTrack.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(currentTrack.id);
+                    }}
                     className="text-zinc-400 hover:text-rose-400 cursor-pointer shrink-0"
                   >
                     <Heart
@@ -1155,13 +1217,14 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
                 <ListMusic className="w-4 h-4" />
               </button>
 
-              {/* Lyrics button */}
+              {/* Lyrics, Video & Details button */}
               <button
                 onClick={() => {
-                  setLyricsTrack(currentTrack);
-                  setIsLyricsModalOpen(true);
+                  if (currentTrack) {
+                    handleOpenSongDetails(currentTrack);
+                  }
                 }}
-                title="Lyrics"
+                title="Lyrics, Video & Details"
                 className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <Mic2 className="w-4 h-4" />
@@ -1705,64 +1768,218 @@ export const CampMusicPlayerPage: FC<CampMusicPlayerPageProps> = ({
         </div>
       )}
 
-      {/* LYRICS MODAL */}
-      {isLyricsModalOpen && lyricsTrack && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-[#181a20] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl text-white max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 shrink-0">
-                  {lyricsTrack.cover_art_url ? (
-                    <img
-                      src={lyricsTrack.cover_art_url}
-                      alt={lyricsTrack.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-500">
-                      <Music className="w-5 h-5" />
+      {/* SONG DETAILS, LYRICS & VIDEO MODAL */}
+      {isLyricsModalOpen && lyricsTrack && (() => {
+        const ytVideoId = extractYouTubeId(lyricsTrack.youtube_url);
+        const hasYouTubeVideo = Boolean(ytVideoId);
+        const isTrackFav = isFavorite(lyricsTrack.id);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
+            <div className="relative w-full max-w-xl bg-[#16181f] border border-white/15 rounded-3xl p-5 sm:p-7 shadow-2xl text-white max-h-[90vh] flex flex-col overflow-hidden">
+              
+              {/* Header: Cover, Title, Artist, and Close */}
+              <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-zinc-800 shrink-0 ring-1 ring-white/15 shadow-lg">
+                    {lyricsTrack.cover_art_url ? (
+                      <img
+                        src={lyricsTrack.cover_art_url}
+                        alt={lyricsTrack.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-zinc-500">
+                        <Music className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base sm:text-lg font-bold text-white truncate">{lyricsTrack.title}</h3>
+                      <button
+                        onClick={() => toggleFavorite(lyricsTrack.id)}
+                        className="text-zinc-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0"
+                        title={isTrackFav ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Heart className={`w-4 h-4 ${isTrackFav ? "fill-rose-500 text-rose-500" : ""}`} />
+                      </button>
                     </div>
-                  )}
+                    <p className="text-xs text-zinc-400 truncate mt-0.5">{lyricsTrack.artist} &bull; {lyricsTrack.album}</p>
+                    <div className="flex items-center gap-2 mt-1.5 text-[11px] text-zinc-400">
+                      <span className="px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 font-semibold uppercase tracking-wider text-[10px]">
+                        {lyricsTrack.category}
+                      </span>
+                      <span>&bull;</span>
+                      <span>{lyricsTrack.duration_display}</span>
+                      {lyricsTrack.play_count !== undefined && lyricsTrack.play_count > 0 && (
+                        <>
+                          <span>&bull;</span>
+                          <span className="font-mono text-zinc-400">{lyricsTrack.play_count.toLocaleString()} plays</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-white truncate">{lyricsTrack.title}</h3>
-                  <p className="text-xs text-zinc-400">{lyricsTrack.artist}</p>
-                </div>
+
+                <button
+                  onClick={handleCloseSongDetails}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer shrink-0"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <button
-                onClick={() => setIsLyricsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+              {/* YouTube Video / Audio Mode Switch Option */}
+              {hasYouTubeVideo && (
+                <div className="flex items-center justify-between gap-3 p-2 bg-white/5 rounded-2xl border border-white/10 my-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-zinc-300">Playback Mode:</span>
+                    <span className="text-[11px] text-zinc-400 hidden sm:inline">
+                      {songMediaMode === 'video' ? 'Watching YouTube Video' : 'Camp Audio Mode'}
+                    </span>
+                  </div>
 
-            <div className="flex-1 overflow-y-auto py-5 pr-2 space-y-4">
-              {lyricsTrack.lyrics ? (
-                <div className="text-sm text-zinc-200 leading-relaxed font-sans whitespace-pre-line tracking-wide">
-                  {lyricsTrack.lyrics}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-zinc-500 text-xs">
-                  <Mic2 className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                  No lyrics added for this track yet.
+                  <div className="flex items-center gap-1 p-0.5 bg-black/50 rounded-xl border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleMediaMode('audio')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        songMediaMode === 'audio'
+                          ? 'bg-[#1db954] text-black shadow-md'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <Music className="w-3.5 h-3.5" />
+                      <span>Audio</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleMediaMode('video')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        songMediaMode === 'video'
+                          ? 'bg-red-600 text-white shadow-md'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      <span>Watch Video</span>
+                    </button>
+                  </div>
                 </div>
               )}
-            </div>
 
-            <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-zinc-500">
-              <span>VLC 2027 Hymnal &amp; Praise Archive</span>
-              <button
-                onClick={() => setIsLyricsModalOpen(false)}
-                className="px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium cursor-pointer"
-              >
-                Close
-              </button>
+              {/* Video Player Embed (if Video Mode active) */}
+              {songMediaMode === 'video' && ytVideoId && (
+                <div className="my-2 rounded-2xl overflow-hidden bg-black border border-white/15 shadow-2xl aspect-video w-full shrink-0">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&rel=0`}
+                    title={lyricsTrack.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                </div>
+              )}
+
+              {/* Streaming Links (Spotify & YouTube Music) */}
+              {(lyricsTrack.spotify_url || lyricsTrack.youtube_url) && (
+                <div className="flex items-center flex-wrap gap-2 pt-1 pb-3">
+                  <span className="text-xs text-zinc-400 font-medium">Available on:</span>
+
+                  {lyricsTrack.spotify_url && (
+                    <a
+                      href={lyricsTrack.spotify_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1db954]/15 hover:bg-[#1db954]/25 text-[#1db954] border border-[#1db954]/30 text-xs font-semibold transition-all hover:scale-105 active:scale-95 shadow-sm"
+                      title="Open song on Spotify"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1db954]" />
+                      <span>Spotify</span>
+                      <ExternalLink className="w-3 h-3 opacity-80" />
+                    </a>
+                  )}
+
+                  {lyricsTrack.youtube_url && (
+                    <a
+                      href={lyricsTrack.youtube_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-semibold transition-all hover:scale-105 active:scale-95 shadow-sm"
+                      title="Open song on YouTube / YouTube Music"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      <span>YouTube Music</span>
+                      <ExternalLink className="w-3 h-3 opacity-80" />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Scrollable Lyrics Container */}
+              <div className="flex-1 overflow-y-auto py-2 pr-1 space-y-3 min-h-[140px]">
+                <div className="flex items-center justify-between text-xs font-bold text-zinc-400 uppercase tracking-wider pb-1.5 border-b border-white/10 sticky top-0 bg-[#16181f] z-10">
+                  <div className="flex items-center gap-1.5">
+                    <Mic2 className="w-3.5 h-3.5 text-[#1db954]" />
+                    <span>Song Lyrics</span>
+                  </div>
+
+                  {lyricsTrack.lyrics && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(lyricsTrack.lyrics || '');
+                        setIsLyricsCopied(true);
+                        setTimeout(() => setIsLyricsCopied(false), 2000);
+                      }}
+                      className="text-[11px] text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {isLyricsCopied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy Lyrics</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {lyricsTrack.lyrics ? (
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-zinc-200 leading-relaxed font-sans whitespace-pre-line tracking-wide selection:bg-[#1db954] selection:text-black">
+                    {lyricsTrack.lyrics}
+                  </div>
+                ) : (
+                  <div className="py-10 text-center text-zinc-500 text-xs">
+                    <Mic2 className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="font-semibold text-zinc-400">No lyrics added yet</p>
+                    <p className="mt-1 text-zinc-500">Lyrics for this praise &amp; worship song will be added soon.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-zinc-500">
+                <span>VLC 2027 Hymnal &amp; Praise Archive</span>
+                <button
+                  onClick={handleCloseSongDetails}
+                  className="px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
