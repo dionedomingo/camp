@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Flame,
   CheckCircle2,
-  Sparkles,
   Music,
 } from 'lucide-react';
 import type { CamperRegistration, AdminUser } from '../types';
@@ -112,19 +111,7 @@ export const UserRightDrawer: FC<UserRightDrawerProps> = ({
         aria-label="User account drawer"
       >
         {/* Top Sticky Header */}
-        <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-xs uppercase font-extrabold tracking-wider text-blue-400 block">
-                {t('drawer.accountTitle')}
-              </span>
-              <span className="text-xs text-zinc-400">VLC 2027</span>
-            </div>
-          </div>
-
+        <div className="px-5 pt-4 pb-1 sm:px-6 sm:pt-5 flex items-center justify-end">
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white border border-white/10 flex items-center justify-center transition-colors cursor-pointer"
