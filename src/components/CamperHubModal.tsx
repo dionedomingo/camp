@@ -54,6 +54,7 @@ interface CamperHubModalProps {
   onInviteFriend: () => void;
   onProfileUpdated?: (updated: CamperRegistration) => void;
   onNavigateToSchedule?: () => void;
+  onViewCamperProfile?: (camperId: string) => void;
   initialTab?: CamperHubTab;
 }
 
@@ -65,6 +66,7 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
   onInviteFriend,
   onProfileUpdated,
   onNavigateToSchedule,
+  onViewCamperProfile,
   initialTab = 'pass',
 }) => {
   const [activeTab, setActiveTab] = useState<CamperHubTab>(initialTab);
@@ -1106,6 +1108,11 @@ export const CamperHubModal: FC<CamperHubModalProps> = ({
                     )
                   )
                 }
+                onNavigateToCamper={(camperId) => {
+                  setHubSelectedPost(null);
+                  onClose();
+                  onViewCamperProfile?.(camperId);
+                }}
               />
             )}
           </div>

@@ -639,6 +639,7 @@ export function App() {
             onBack={handleCloseCamperProfile}
             onJoinDelegation={handleJoinDelegationFromProfile}
             onNavigateToAccount={() => navigateToTab('account')}
+            onNavigateToCamper={handleOpenCamperProfile}
             currentCamper={currentCamper}
             currentUser={currentUser}
           />
@@ -778,6 +779,7 @@ export function App() {
         onInviteFriend={() => currentCamper && handleOpenInviteModal(currentCamper)}
         onProfileUpdated={handleProfileUpdated}
         onNavigateToSchedule={() => setActiveTab('schedule')}
+        onViewCamperProfile={handleOpenCamperProfile}
         initialTab={camperHubTab}
       />
 

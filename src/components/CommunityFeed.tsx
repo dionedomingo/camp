@@ -366,6 +366,7 @@ export const CommunityFeed: FC<CommunityFeedProps> = ({
           currentCamper={currentCamper}
           onPostDeleted={handlePostDeleted}
           onReactionUpdated={handleReactionUpdated}
+          onNavigateToCamper={onNavigateToCamper}
         />
       )}
     </div>

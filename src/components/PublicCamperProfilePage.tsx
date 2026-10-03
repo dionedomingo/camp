@@ -42,6 +42,7 @@ interface PublicCamperProfilePageProps {
   onBack: () => void;
   onJoinDelegation?: (churchId: string) => void;
   onNavigateToAccount?: () => void;
+  onNavigateToCamper?: (camperId: string) => void;
   currentCamper?: CamperRegistration | null;
   currentUser?: AdminUser | null;
 }
@@ -51,6 +52,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
   onBack,
   onJoinDelegation,
   onNavigateToAccount,
+  onNavigateToCamper,
   currentCamper,
   currentUser,
 }) => {
@@ -897,6 +899,7 @@ export const PublicCamperProfilePage: FC<PublicCamperProfilePageProps> = ({
           currentCamper={currentCamper || null}
           onPostDeleted={handlePostDeleted}
           onReactionUpdated={handleReactionUpdated}
+          onNavigateToCamper={onNavigateToCamper}
         />
       )}
 

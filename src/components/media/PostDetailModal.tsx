@@ -7,7 +7,9 @@ import {
   Loader2, 
   Sparkles, 
   MapPin,
-  Clock
+  Clock,
+  Heart,
+  Smile
 } from 'lucide-react';
 import type { CommunityPost, PostComment, AllowedReactionEmoji, CamperRegistration } from '../../types';
 import { apiService } from '../../services/api';
@@ -22,6 +24,7 @@ interface PostDetailModalProps {
   onPostDeleted?: (postId: string) => void;
   onReactionUpdated?: (postId: string, emoji: AllowedReactionEmoji | null, counts: any) => void;
   onCommentAdded?: (postId: string, newComment: PostComment) => void;
+  onNavigateToCamper?: (camperId: string) => void;
 }
 
 export const PostDetailModal: FC<PostDetailModalProps> = ({
@@ -32,6 +35,7 @@ export const PostDetailModal: FC<PostDetailModalProps> = ({
   onPostDeleted,
   onReactionUpdated,
   onCommentAdded,
+  onNavigateToCamper,
 }) => {
   const [comments, setComments] = useState<PostComment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -41,6 +45,97 @@ export const PostDetailModal: FC<PostDetailModalProps> = ({
   const [reactionCounts, setReactionCounts] = useState<any>({});
   const [isReacting, setIsReacting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Comment reaction states
+  const [reactingCommentId, setReactingCommentId] = useState<string | null>(null);
+  const [activeCommentEmojiPicker, setActiveCommentEmojiPicker] = useState<string | null>(null);
+
+  // Close floating emoji picker on outside click
+  useEffect(() => {
+    if (!activeCommentEmojiPicker) return;
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.emoji-picker-container')) {
+        setActiveCommentEmojiPicker(null);
+      }
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, [activeCommentEmojiPicker]);
+
+  const handleOpenCamper = (camperId?: string) => {
+    if (!camperId) return;
+    onClose();
+    onNavigateToCamper?.(camperId);
+  };
+
+  const handleCommentReaction = async (commentId: string, emoji: AllowedReactionEmoji) => {
+    if (!currentCamper?.id) {
+      alert('Please log in with your Camp Pass to react to comments!');
+      return;
+    }
+    if (reactingCommentId === commentId) return;
+
+    const targetComment = comments.find((c) => c.id === commentId);
+    if (!targetComment) return;
+
+    const prevUserReaction = targetComment.user_reaction;
+    const prevCounts = { ...(targetComment.reaction_counts || {}) };
+    const isToggleOff = prevUserReaction === emoji;
+    const nextUserReaction = isToggleOff ? null : emoji;
+
+    const nextCounts = { ...prevCounts };
+    if (prevUserReaction && (nextCounts[prevUserReaction] || 0) > 0) {
+      nextCounts[prevUserReaction] -= 1;
+      nextCounts.total = Math.max(0, (nextCounts.total || 1) - 1);
+    }
+    if (!isToggleOff) {
+      nextCounts[emoji] = (nextCounts[emoji] || 0) + 1;
+      nextCounts.total = (nextCounts.total || 0) + 1;
+    }
+
+    // Optimistic update
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? { ...c, user_reaction: nextUserReaction, reaction_counts: nextCounts }
+          : c
+      )
+    );
+    setActiveCommentEmojiPicker(null);
+    setReactingCommentId(commentId);
+
+    try {
+      const res = await apiService.toggleReaction('comment', commentId, emoji, currentCamper.id);
+      if (res.success && res.reaction_counts) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? { ...c, user_reaction: res.user_reaction || null, reaction_counts: res.reaction_counts }
+              : c
+          )
+        );
+      } else {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? { ...c, user_reaction: prevUserReaction, reaction_counts: prevCounts }
+              : c
+          )
+        );
+      }
+    } catch {
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId
+            ? { ...c, user_reaction: prevUserReaction, reaction_counts: prevCounts }
+            : c
+        )
+      );
+    } finally {
+      setReactingCommentId(null);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen || !post) return;
@@ -191,7 +286,12 @@ export const PostDetailModal: FC<PostDetailModalProps> = ({
           {/* Post Header */}
           <div className="p-4 border-b border-zinc-100 flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-100 shrink-0 bg-zinc-100 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => handleOpenCamper(post.camper_id || post.camper?.id)}
+                className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-100 shrink-0 bg-zinc-100 shadow-2xs hover:ring-2 hover:ring-blue-500 hover:scale-105 active:scale-95 transition-all cursor-pointer focus:outline-hidden"
+                title={`View ${post.camper?.nickname || 'Camper'}'s profile`}
+              >
                 {post.camper?.selfie_url ? (
                   <img
                     src={post.camper.selfie_url}
@@ -199,16 +299,21 @@ export const PostDetailModal: FC<PostDetailModalProps> = ({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center font-bold text-blue-600">
+                  <div className="w-full h-full flex items-center justify-center font-bold text-blue-600 bg-blue-50">
                     {post.camper?.nickname?.charAt(0) || 'C'}
                   </div>
                 )}
-              </div>
+              </button>
 
               <div className="min-w-0">
-                <h4 className="font-bold text-sm text-zinc-900 truncate">
+                <button
+                  type="button"
+                  onClick={() => handleOpenCamper(post.camper_id || post.camper?.id)}
+                  className="font-bold text-sm text-zinc-900 truncate block hover:text-blue-600 hover:underline cursor-pointer text-left focus:outline-hidden"
+                  title={`View ${post.camper?.nickname || 'Camper'}'s profile`}
+                >
                   {post.camper?.nickname || post.camper?.full_name}
-                </h4>
+                </button>
                 <p className="text-[11px] text-zinc-500 truncate flex items-center gap-1">
                   {post.camper?.church_name && (
                     <>
@@ -279,37 +384,149 @@ export const PostDetailModal: FC<PostDetailModalProps> = ({
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="flex items-start gap-2.5 group">
-                      <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-100 shrink-0 border border-zinc-200 mt-0.5">
-                        {comment.camper?.selfie_url ? (
-                          <img
-                            src={comment.camper.selfie_url}
-                            alt={comment.camper.nickname}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-zinc-600">
-                            {comment.camper?.nickname?.charAt(0) || 'C'}
-                          </div>
-                        )}
-                      </div>
+                  {comments.map((comment) => {
+                    const hasHeart = comment.user_reaction === '❤️';
+                    const hasReactions = Boolean(comment.reaction_counts && comment.reaction_counts.total > 0);
+                    const isPickerOpen = activeCommentEmojiPicker === comment.id;
 
-                      <div className="flex-1 min-w-0 bg-zinc-50 rounded-2xl p-2.5 text-xs">
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-bold text-zinc-900 truncate">
-                            {comment.camper?.nickname || comment.camper?.full_name}
-                          </span>
-                          <span className="text-[10px] text-zinc-400 shrink-0">
-                            {formatPostTime(comment.created_at)}
-                          </span>
+                    return (
+                      <div key={comment.id} className="flex items-start gap-2.5 group">
+                        {/* Commenter Avatar (Click to view profile) */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCamper(comment.camper_id || comment.camper?.id)}
+                          className="w-7 h-7 rounded-full overflow-hidden bg-zinc-100 shrink-0 border border-zinc-200 mt-0.5 hover:ring-2 hover:ring-blue-500 hover:scale-105 active:scale-95 transition-all cursor-pointer focus:outline-hidden shadow-2xs"
+                          title={`View ${comment.camper?.nickname || 'Camper'}'s profile`}
+                        >
+                          {comment.camper?.selfie_url ? (
+                            <img
+                              src={comment.camper.selfie_url}
+                              alt={comment.camper.nickname || 'Avatar'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-zinc-600 bg-zinc-200">
+                              {comment.camper?.nickname?.charAt(0) || comment.camper?.full_name?.charAt(0) || 'C'}
+                            </div>
+                          )}
+                        </button>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="bg-zinc-50 rounded-2xl p-2.5 text-xs border border-zinc-100/80">
+                            {/* Commenter Name (Clickable) & Time */}
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCamper(comment.camper_id || comment.camper?.id)}
+                                className="font-bold text-zinc-900 truncate hover:text-blue-600 hover:underline cursor-pointer text-left focus:outline-hidden"
+                                title={`View ${comment.camper?.nickname || 'Camper'}'s profile`}
+                              >
+                                {comment.camper?.nickname || comment.camper?.full_name}
+                              </button>
+                              <span className="text-[10px] text-zinc-400 shrink-0">
+                                {formatPostTime(comment.created_at)}
+                              </span>
+                            </div>
+
+                            {/* Comment Body */}
+                            <p className="text-zinc-700 whitespace-pre-line leading-relaxed">
+                              {comment.body}
+                            </p>
+
+                            {/* Existing Reactions Badges */}
+                            {hasReactions && (
+                              <div className="flex flex-wrap items-center gap-1 mt-2 pt-1.5 border-t border-zinc-200/50">
+                                {EMOJI_WHITELIST.map((emoji) => {
+                                  const count = comment.reaction_counts?.[emoji] || 0;
+                                  if (count === 0) return null;
+                                  const isUserActive = comment.user_reaction === emoji;
+                                  return (
+                                    <button
+                                      key={emoji}
+                                      type="button"
+                                      onClick={() => handleCommentReaction(comment.id, emoji)}
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium border transition-all cursor-pointer ${
+                                        isUserActive
+                                          ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-2xs font-bold'
+                                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                                      }`}
+                                      title={isUserActive ? `Remove ${emoji}` : `React with ${emoji}`}
+                                    >
+                                      <span>{emoji}</span>
+                                      <span className="text-[10px]">{count}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quick Action Buttons Row: Heart Like & Emoji React */}
+                          <div className="flex items-center gap-3 px-2 pt-1 text-[11px] text-zinc-500">
+                            {/* Quick Heart Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleCommentReaction(comment.id, '❤️')}
+                              className={`inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer ${
+                                hasHeart
+                                  ? 'text-rose-600 hover:text-rose-700'
+                                  : 'text-zinc-400 hover:text-rose-500'
+                              }`}
+                              title={hasHeart ? 'Unlike comment' : 'Heart comment'}
+                            >
+                              <Heart className={`w-3 h-3 ${hasHeart ? 'fill-rose-500 text-rose-500' : ''}`} />
+                              <span className="text-[10px]">{hasHeart ? 'Liked' : 'Like'}</span>
+                            </button>
+
+                            {/* Emoji reaction picker button */}
+                            <div className="relative emoji-picker-container">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveCommentEmojiPicker(isPickerOpen ? null : comment.id);
+                                }}
+                                className={`inline-flex items-center gap-1 font-medium transition-colors cursor-pointer ${
+                                  isPickerOpen ? 'text-blue-600 font-bold' : 'text-zinc-400 hover:text-zinc-700'
+                                }`}
+                                title="React with emoji"
+                              >
+                                <Smile className="w-3 h-3" />
+                                <span className="text-[10px]">React</span>
+                              </button>
+
+                              {/* Floating Mini Emoji Palette */}
+                              {isPickerOpen && (
+                                <div
+                                  className="absolute left-0 bottom-full mb-1.5 z-30 flex items-center gap-1 bg-white/95 backdrop-blur-md p-1.5 rounded-full border border-zinc-200 shadow-xl animate-in fade-in zoom-in-95 duration-150"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {EMOJI_WHITELIST.map((emoji) => {
+                                    const isSelected = comment.user_reaction === emoji;
+                                    return (
+                                      <button
+                                        key={emoji}
+                                        type="button"
+                                        onClick={() => handleCommentReaction(comment.id, emoji)}
+                                        className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-transform hover:scale-125 cursor-pointer ${
+                                          isSelected
+                                            ? 'bg-blue-50 ring-1 ring-blue-500 scale-110 shadow-xs'
+                                            : 'hover:bg-zinc-100 active:scale-95'
+                                        }`}
+                                        title={`React ${emoji}`}
+                                      >
+                                        <span className="select-none">{emoji}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-zinc-700 whitespace-pre-line leading-relaxed">
-                          {comment.body}
-                        </p>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
