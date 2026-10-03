@@ -17,6 +17,8 @@ import { AdminLeftDrawer, type AdminTab } from './components/AdminLeftDrawer';
 import { UserRightDrawer } from './components/UserRightDrawer';
 import { DigitalPassModal } from './components/DigitalPassModal';
 import { CampMusicPlayerPage } from './components/music/CampMusicPlayerPage';
+import { GlobalMiniPlayer } from './components/music/GlobalMiniPlayer';
+import { MusicPlayerProvider } from './context/MusicPlayerContext';
 import type { Church, RegistrationStats, CamperRegistration, AdminUser, CampEvent } from './types';
 import { apiService } from './services/api';
 
@@ -445,7 +447,8 @@ export function App() {
   } as CamperRegistration : null);
 
   return (
-    <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
+    <MusicPlayerProvider>
+      <div className="min-h-screen bg-[#f8fafd] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
       {/* Top Fixed Header with Schedule, Overview, Churches, and Sign-in */}
       {activeTab !== 'home' && (
         <Header
@@ -811,7 +814,14 @@ export function App() {
         onInviteFriend={() => currentCamper && handleOpenInviteModal(currentCamper)}
       />
 
+      {/* Global Persistent Mini-Player - Keeps playing seamlessly across tabs */}
+      <GlobalMiniPlayer
+        onExpandToMusic={() => navigateToTab('music')}
+        activeTab={activeTab}
+      />
+
     </div>
+    </MusicPlayerProvider>
   );
 };
 
