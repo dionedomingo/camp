@@ -32,10 +32,10 @@ export default {
         });
       }
 
-      // Default to verified sender address on filipino.dk
-      const fromAddress = (data.from && data.from.includes('@filipino.dk'))
+      // Default to verified sender address on pcciministries.com
+      const fromAddress = (data.from && data.from.includes('@pcciministries.com'))
         ? data.from
-        : 'noreply@filipino.dk';
+        : 'noreply@pcciministries.com';
 
       await env.EMAIL.send({
         to: data.to,

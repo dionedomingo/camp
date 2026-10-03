@@ -57,7 +57,7 @@ export async function dispatchCamperPassportEmail(options: {
     provider = 'postmark';
   }
 
-  const defaultFrom = env.EMAIL_FROM || 'VLC 2027 Camp Desk <noreply@vlc2027.org>';
+  const defaultFrom = env.EMAIL_FROM || 'VLC 2027 Camp Desk <noreply@pcciministries.com>';
 
   // 3. Insert or update delivery record to 'pending'
   try {
@@ -282,7 +282,7 @@ export async function dispatchPasswordResetEmail(options: {
     provider = 'postmark';
   }
 
-  const defaultFrom = env.EMAIL_FROM || 'VLC 2027 Camp Desk <noreply@filipino.dk>';
+  const defaultFrom = env.EMAIL_FROM || 'VLC 2027 Camp Desk <noreply@pcciministries.com>';
 
   try {
     await db

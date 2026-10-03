@@ -16,6 +16,7 @@
     "d1:reset": "rm -rf .wrangler/state/v3/d1 && npm run d1:init",
     "d1:remote": "wrangler d1 execute vlc2027-camp-db --remote",
     "d1:remote:file": "wrangler d1 execute vlc2027-camp-db --remote -y --file",
+    "email:deploy": "wrangler deploy -c email-worker/wrangler.jsonc",
     "deploy": "npm run build && wrangler pages deploy ./dist"
   },
   "dependencies": {

@@ -5,7 +5,7 @@
   "send_email": [
     {
       "name": "EMAIL",
-      "allowed_sender_addresses": ["noreply@filipino.dk", "vlc2027@filipino.dk", "registrations@filipino.dk"]
+      "allowed_sender_addresses": ["noreply@pcciministries.com", "vlc2027@pcciministries.com", "registrations@pcciministries.com"]
     }
   ]
 }
