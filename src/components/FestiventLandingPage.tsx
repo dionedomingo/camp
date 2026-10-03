@@ -8,7 +8,9 @@ import {
   Flame,
   ChevronDown,
   X,
-  Building2
+  Building2,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import type { Church, RegistrationStats, CampEvent, CamperRegistration, AdminUser } from '../types';
 import { formatEventDateRange } from '../lib/utils';
@@ -107,10 +109,22 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Video playback & mute state
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   // Parallax and scroll bulge references
   const bulgeRef = useRef<HTMLDivElement>(null);
   const parallaxImgRef = useRef<HTMLImageElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
+
+  // Auto-play muted video safely on mount
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
 
   // Calculate live countdown to camp
   const startDateStr = event?.start_date || '2027-07-21T08:00:00';
@@ -152,11 +166,12 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
           const scrollY = window.scrollY;
           setIsScrolled(scrollY > 50);
 
-          // 1. Media parallax translateY and scale
-          if (parallaxImgRef.current) {
+          // 1. Media parallax translateY and scale on both video and fallback image
+          const mediaEl = videoRef.current || parallaxImgRef.current;
+          if (mediaEl) {
             const translateY = scrollY * 0.25;
             const scale = 1.05 + Math.min(scrollY * 0.00025, 0.12);
-            parallaxImgRef.current.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
+            mediaEl.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
           }
 
           // 2. Festivent-style bulge / expansion effect on the hero media container
@@ -369,74 +384,77 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
         </div>
       </section>
 
-      {/* 3. FULL-WIDTH HERO IMAGE CONTAINER WITH BULGE & PARALLAX SCROLL ANIMATION (Festivent c-bulge) */}
+      {/* 3. FULL-WIDTH HERO VIDEO CONTAINER WITH BULGE & PARALLAX SCROLL ANIMATION (Festivent c-bulge) */}
       <div className="w-full px-2 sm:px-6 lg:px-10 transition-all duration-300">
         <div
           ref={bulgeRef}
-          className="relative w-full h-[60vh] sm:h-[75vh] lg:h-[88vh] overflow-hidden rounded-3xl sm:rounded-[3rem] border border-white/15 shadow-2xl transition-all duration-500 ease-out"
+          className="relative w-full h-[65vh] sm:h-[78vh] lg:h-[90vh] overflow-hidden rounded-3xl sm:rounded-[3rem] border border-white/15 shadow-2xl transition-all duration-500 ease-out bg-slate-950"
         >
-          {/* Parallax Image */}
-          <img
-            ref={parallaxImgRef}
-            src={heroImageUrl}
-            alt="VLC 2027 Camp Worship Atmosphere"
-            className="w-full h-full object-cover scale-105 origin-center will-change-transform"
-          />
-          {/* Deep Cinematic Gradient Vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent"></div>
+          {/* Muted Autoplay Repeated Placeholder Video */}
+          <video
+            ref={videoRef}
+            autoPlay
+            muted={isMuted}
+            loop
+            playsInline
+            poster={heroImageUrl}
+            className="w-full h-full object-cover scale-105 origin-center will-change-transform filter brightness-[0.85]"
+          >
+            <source src="/videos/camp-teaser.mp4" type="video/mp4" />
+            <source src="/videos/hero-placeholder.mp4" type="video/mp4" />
+            <img
+              ref={parallaxImgRef}
+              src={heroImageUrl}
+              alt="VLC 2027 Camp Worship Atmosphere"
+              className="w-full h-full object-cover"
+            />
+          </video>
 
-          {/* Floating Atmospheric Badge */}
-          <div className="absolute bottom-6 left-6 sm:bottom-12 sm:left-12 max-w-md bg-slate-900/85 backdrop-blur-xl border border-white/15 p-5 rounded-2xl shadow-2xl">
-            <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">
+          {/* Deep Cinematic Gradient Vignette */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-transparent to-transparent pointer-events-none"></div>
+
+          {/* Video Audio Control: Mute / Unmute */}
+          <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-20">
+            <button
+              onClick={() => {
+                if (videoRef.current) {
+                  videoRef.current.muted = !isMuted;
+                }
+                setIsMuted(!isMuted);
+              }}
+              className="px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-xs text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
+              title={isMuted ? 'Unmute video' : 'Mute video'}
+            >
+              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-zinc-300" /> : <Volume2 className="w-3.5 h-3.5 text-blue-400" />}
+              <span className="text-[11px] font-semibold">{isMuted ? 'Muted' : 'Sound On'}</span>
+            </button>
+          </div>
+
+          {/* Floating Atmospheric Badge & Live Experience */}
+          <div className="absolute bottom-6 left-6 sm:bottom-12 sm:left-12 max-w-lg z-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-3 backdrop-blur-md">
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
               <span>{t('hero.atmosphereBadge')}</span>
             </div>
-            <p className="text-xs sm:text-sm text-zinc-200">
+            <h3 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-white drop-shadow-2xl leading-none mb-3">
+              Feel The <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-300">
+                Atmosphere
+              </span>
+            </h3>
+            <p className="text-xs sm:text-sm text-zinc-200 backdrop-blur-md bg-slate-950/60 p-3 sm:p-4 rounded-2xl border border-white/10 shadow-xl max-w-md">
               {t('hero.atmosphereQuote')}
             </p>
           </div>
 
           {/* Scroll Down Hint */}
-          <div className="absolute bottom-6 right-6 sm:bottom-12 sm:right-12 hidden sm:flex items-center gap-2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-xs text-zinc-300">
+          <div className="absolute bottom-6 right-6 sm:bottom-12 sm:right-12 hidden sm:flex items-center gap-2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-xs text-zinc-300 z-20">
             <span>{t('hero.scrollHint')}</span>
             <ChevronDown className="w-4 h-4 animate-bounce text-blue-400" />
           </div>
         </div>
       </div>
-
-      {/* 3.5 FULL-WIDTH CINEMATIC VIDEO PLAYBACK SECTION */}
-      <section className="w-full relative bg-slate-950 mt-12 sm:mt-24 mb-8 sm:mb-16">
-        <div className="w-full h-[50vh] sm:h-[70vh] lg:h-[85vh] relative">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover filter brightness-[0.8]"
-          >
-            {/* Free Pexels/Mixkit fallback video representing camp/worship/youth energy */}
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-crowd-of-people-at-a-music-festival-4214-large.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          {/* Gradients to seamlessly blend with the dark background */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-transparent"></div>
-
-          <div className="absolute bottom-12 sm:bottom-24 left-4 sm:left-12 lg:left-24 z-10 max-w-2xl px-4 sm:px-0">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-3 sm:mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-              Live Experience
-            </div>
-            <h3 className="text-4xl sm:text-6xl md:text-7xl font-black uppercase text-white drop-shadow-2xl leading-none">
-              Feel The <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-amber-300">Fire</span>
-            </h3>
-            <p className="text-zinc-200 mt-4 sm:mt-6 text-sm sm:text-lg font-medium drop-shadow-md max-w-lg leading-relaxed">
-              Experience the energy, passion, and transformative moments from previous gatherings. Get ready to be part of a generation on fire.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* 4. KEYNOTE SPEAKERS MARQUEE (Festivent Artistes Marquee Style) */}
       <section className="py-24 relative overflow-hidden">
