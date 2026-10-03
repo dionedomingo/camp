@@ -2825,9 +2825,12 @@ class CampApiService {
       const params = new URLSearchParams();
       if (category && category !== 'all') params.set('category', category);
       if (search) params.set('search', search);
+      params.set('_t', String(Date.now()));
 
       const qs = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(`/api/music${qs}`);
+      const res = await fetch(`/api/music${qs}`, {
+        cache: 'no-store',
+      });
       if (!res.ok) {
         throw new Error(`Server returned HTTP ${res.status}`);
       }

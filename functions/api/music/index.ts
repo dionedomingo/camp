@@ -153,38 +153,44 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const search = url.searchParams.get('search');
     const includeUnpublished = url.searchParams.get('all') === 'true';
 
-    // 1. Ensure tables exist in D1
-    await context.env.DB.exec(`
-      CREATE TABLE IF NOT EXISTS music_tracks (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        artist TEXT NOT NULL,
-        album TEXT DEFAULT 'VLC 2027 Worship',
-        duration INTEGER DEFAULT 0,
-        duration_display TEXT DEFAULT '3:45',
-        audio_url TEXT NOT NULL,
-        cover_art_url TEXT,
-        category TEXT DEFAULT 'worship',
-        lyrics TEXT,
-        spotify_url TEXT,
-        youtube_url TEXT,
-        uploaded_by TEXT DEFAULT 'admin',
-        sort_order INTEGER DEFAULT 0,
-        is_published INTEGER DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-      CREATE TABLE IF NOT EXISTS music_playlists (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        platform TEXT NOT NULL,
-        url TEXT NOT NULL,
-        description TEXT,
-        cover_url TEXT,
-        is_featured INTEGER DEFAULT 1,
-        sort_order INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    // 1. Ensure tables exist in D1 safely
+    try {
+      await context.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS music_tracks (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          artist TEXT NOT NULL,
+          album TEXT DEFAULT 'VLC 2027 Worship',
+          duration INTEGER DEFAULT 0,
+          duration_display TEXT DEFAULT '3:45',
+          audio_url TEXT NOT NULL,
+          cover_art_url TEXT,
+          category TEXT DEFAULT 'worship',
+          lyrics TEXT,
+          spotify_url TEXT,
+          youtube_url TEXT,
+          uploaded_by TEXT DEFAULT 'admin',
+          sort_order INTEGER DEFAULT 0,
+          is_published INTEGER DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      await context.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS music_playlists (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          platform TEXT NOT NULL,
+          url TEXT NOT NULL,
+          description TEXT,
+          cover_url TEXT,
+          is_featured INTEGER DEFAULT 1,
+          sort_order INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+    } catch (tblErr) {
+      console.warn('[Music API] Table check notice:', tblErr);
+    }
 
     // 2. Fetch tracks
     let query = `SELECT * FROM music_tracks`;
@@ -214,67 +220,84 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     let tracks = await context.env.DB.prepare(query).bind(...params).all<MusicTrack>();
 
-    // If database is empty, seed defaults
-    if (!tracks.results || tracks.results.length === 0) {
-      const existingCount = await context.env.DB
-        .prepare(`SELECT count(*) as count FROM music_tracks`)
-        .first<{ count: number }>();
+    // If database has 0 tracks total, seed starter defaults
+    const existingCount = await context.env.DB
+      .prepare(`SELECT count(*) as count FROM music_tracks`)
+      .first<{ count: number }>();
 
-      if (!existingCount || existingCount.count === 0) {
-        for (let i = 0; i < SEED_TRACKS.length; i++) {
-          const track = SEED_TRACKS[i];
-          const trackId = `track_${Date.now()}_${i + 1}`;
-          await context.env.DB
-            .prepare(`
-              INSERT INTO music_tracks (
-                id, title, artist, album, duration, duration_display,
-                audio_url, cover_art_url, category, lyrics, spotify_url,
-                youtube_url, sort_order, is_published
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `)
-            .bind(
-              trackId, track.title, track.artist, track.album, track.duration,
-              track.duration_display, track.audio_url, track.cover_art_url,
-              track.category, track.lyrics, track.spotify_url, track.youtube_url,
-              track.sort_order, track.is_published
-            )
-            .run();
-        }
-
-        // Also seed playlists if empty
-        const playlistCount = await context.env.DB
-          .prepare(`SELECT count(*) as count FROM music_playlists`)
-          .first<{ count: number }>();
-
-        if (!playlistCount || playlistCount.count === 0) {
-          for (let i = 0; i < SEED_PLAYLISTS.length; i++) {
-            const p = SEED_PLAYLISTS[i];
-            const pId = `playlist_${Date.now()}_${i + 1}`;
-            await context.env.DB
-              .prepare(`
-                INSERT INTO music_playlists (
-                  id, title, platform, url, description, cover_url, is_featured, sort_order
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-              `)
-              .bind(pId, p.title, p.platform, p.url, p.description, p.cover_url, p.is_featured, p.sort_order)
-              .run();
-          }
-        }
-
-        // Re-query tracks after seed
-        tracks = await context.env.DB.prepare(query).bind(...params).all<MusicTrack>();
+    if (!existingCount || existingCount.count === 0) {
+      for (let i = 0; i < SEED_TRACKS.length; i++) {
+        const track = SEED_TRACKS[i];
+        const trackId = `track_${Date.now()}_${i + 1}`;
+        await context.env.DB
+          .prepare(`
+            INSERT INTO music_tracks (
+              id, title, artist, album, duration, duration_display,
+              audio_url, cover_art_url, category, lyrics, spotify_url,
+              youtube_url, sort_order, is_published
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `)
+          .bind(
+            trackId, track.title, track.artist, track.album, track.duration,
+            track.duration_display, track.audio_url, track.cover_art_url,
+            track.category, track.lyrics, track.spotify_url, track.youtube_url,
+            track.sort_order, track.is_published
+          )
+          .run();
       }
+
+      // Re-query tracks after seed
+      tracks = await context.env.DB.prepare(query).bind(...params).all<MusicTrack>();
     }
 
-    // 3. Fetch playlists
+    // 3. Ensure playlists exist in D1
+    try {
+      const playlistCount = await context.env.DB
+        .prepare(`SELECT count(*) as count FROM music_playlists`)
+        .first<{ count: number }>();
+
+      if (!playlistCount || playlistCount.count === 0) {
+        for (let i = 0; i < SEED_PLAYLISTS.length; i++) {
+          const p = SEED_PLAYLISTS[i];
+          const pId = `playlist_${Date.now()}_${i + 1}`;
+          await context.env.DB
+            .prepare(`
+              INSERT INTO music_playlists (
+                id, title, platform, url, description, cover_url, is_featured, sort_order
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `)
+            .bind(pId, p.title, p.platform, p.url, p.description, p.cover_url, p.is_featured, p.sort_order)
+            .run();
+        }
+      }
+    } catch (playlistErr) {
+      console.warn('[Music API] Playlist seed notice:', playlistErr);
+    }
+
+    // 4. Fetch playlists
     const playlists = await context.env.DB
       .prepare(`SELECT * FROM music_playlists ORDER BY sort_order ASC, created_at ASC`)
       .all<MusicPlaylist>();
 
+    // Map duration if 0 but duration_display is present
+    const mappedTracks = (tracks.results || []).map((t) => {
+      let dur = t.duration;
+      if ((!dur || dur === 0) && t.duration_display) {
+        const parts = t.duration_display.split(':').map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          dur = parts[0] * 60 + parts[1];
+        }
+      }
+      return {
+        ...t,
+        duration: dur,
+      };
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
-        tracks: tracks.results || [],
+        tracks: mappedTracks,
         playlists: playlists.results || [],
       }),
       {
@@ -282,7 +305,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, max-age=60',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
         },
       }
     );
@@ -324,6 +347,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       youtubeUrl = (formData.get('youtube_url') as string) || '';
       durationDisplay = (formData.get('duration_display') as string) || durationDisplay;
       uploadedBy = (formData.get('uploaded_by') as string) || uploadedBy;
+
+      if (durationDisplay) {
+        const parts = durationDisplay.split(':').map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          duration = parts[0] * 60 + parts[1];
+        }
+      }
 
       // Handle direct audio file upload to Cloudflare R2
       const audioFile = formData.get('audio_file') as File | null;

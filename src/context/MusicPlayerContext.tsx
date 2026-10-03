@@ -105,7 +105,18 @@ export const MusicPlayerProvider: FC<{ children: ReactNode }> = ({ children }) =
       if (res.success && res.tracks) {
         setTracks(res.tracks);
         setPlaylists(res.playlists || []);
-        setActiveQueue((prev) => (prev.length === 0 ? res.tracks : prev));
+        setActiveQueue((prev) => {
+          if (prev.length === 0) return res.tracks;
+          // If a track was already playing, preserve current track index
+          const currentId = prev[currentTrackIndex]?.id;
+          if (currentId) {
+            const nextIdx = res.tracks.findIndex((t) => t.id === currentId);
+            if (nextIdx !== -1) {
+              setCurrentTrackIndex(nextIdx);
+            }
+          }
+          return res.tracks;
+        });
       }
     } catch (err: unknown) {
       console.warn('[MusicPlayerContext] Load tracks error:', err);
