@@ -172,9 +172,14 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
           // 1. Media parallax translateY and scale on both video and fallback image
           const mediaEl = videoRef.current || parallaxImgRef.current;
           if (mediaEl) {
-            const translateY = scrollY * 0.25;
-            const scale = 1.05 + Math.min(scrollY * 0.00025, 0.12);
-            mediaEl.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
+            const isMobile = window.innerWidth < 640;
+            if (!isMobile) {
+              const translateY = scrollY * 0.25;
+              const scale = 1.05 + Math.min(scrollY * 0.00025, 0.12);
+              mediaEl.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
+            } else {
+              mediaEl.style.transform = 'translate3d(0, 0, 0)';
+            }
           }
 
           // 2. Festivent-style bulge / expansion effect on the hero media container
@@ -411,7 +416,7 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
       <div className="w-full px-2 sm:px-6 lg:px-10 transition-all duration-300">
         <div
           ref={bulgeRef}
-          className="relative w-full h-[65vh] sm:h-[78vh] lg:h-[90vh] overflow-hidden rounded-3xl sm:rounded-[3rem] border border-white/15 shadow-2xl transition-all duration-500 ease-out bg-slate-950"
+          className="relative w-full aspect-video sm:aspect-auto sm:h-[78vh] lg:h-[90vh] overflow-hidden rounded-2xl sm:rounded-[3rem] border border-white/15 shadow-2xl transition-all duration-500 ease-out bg-slate-950"
         >
           {/* Muted Autoplay Repeated Placeholder Video */}
           <video
@@ -420,8 +425,10 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
             muted={isMuted}
             loop
             playsInline
+            {...({ 'webkit-playsinline': 'true' } as any)}
             poster={heroImageUrl}
-            className="w-full h-full object-cover scale-105 origin-center will-change-transform filter brightness-[0.85]"
+            className="absolute inset-0 w-full h-full object-cover origin-center will-change-transform filter brightness-[0.9] sm:brightness-[0.85]"
+            style={{ objectFit: 'cover' }}
           >
             <source src="/videos/camp-teaser.mp4" type="video/mp4" />
             <source src="/videos/hero-placeholder.mp4" type="video/mp4" />
@@ -430,15 +437,16 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
               src={heroImageUrl}
               alt="VLC 2027 Camp Worship Atmosphere"
               className="w-full h-full object-cover"
+              style={{ objectFit: 'cover' }}
             />
           </video>
 
           {/* Deep Cinematic Gradient Vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-transparent to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 sm:from-slate-950 via-slate-950/10 sm:via-slate-950/20 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/30 sm:from-slate-950/40 via-transparent to-transparent pointer-events-none"></div>
 
           {/* Video Audio Control: Mute / Unmute */}
-          <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-20">
+          <div className="absolute top-2.5 right-2.5 sm:top-8 sm:right-8 z-20">
             <button
               onClick={() => {
                 if (videoRef.current) {
@@ -446,27 +454,27 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
                 }
                 setIsMuted(!isMuted);
               }}
-              className="px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-xs text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
+              className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-xs text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
               title={isMuted ? 'Unmute video' : 'Mute video'}
             >
               {isMuted ? <VolumeX className="w-3.5 h-3.5 text-zinc-300" /> : <Volume2 className="w-3.5 h-3.5 text-blue-400" />}
-              <span className="text-[11px] font-semibold">{isMuted ? 'Muted' : 'Sound On'}</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold">{isMuted ? 'Muted' : 'Sound On'}</span>
             </button>
           </div>
 
           {/* Floating Atmospheric Badge & Live Experience */}
-          <div className="absolute bottom-6 left-6 sm:bottom-12 sm:left-12 max-w-lg z-20">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-3 backdrop-blur-md">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+          <div className="absolute bottom-3 left-3 sm:bottom-12 sm:left-12 max-w-lg z-20 pr-3">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[9px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-3 backdrop-blur-md">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-400 animate-ping"></span>
               <span>{t('hero.atmosphereBadge')}</span>
             </div>
-            <h3 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-white drop-shadow-2xl leading-none mb-3">
-              Feel The <br />
+            <h3 className="text-base sm:text-5xl lg:text-6xl font-black uppercase text-white drop-shadow-2xl leading-none mb-1 sm:mb-3">
+              Feel The{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-300">
                 Atmosphere
               </span>
             </h3>
-            <p className="text-xs sm:text-sm text-zinc-200 backdrop-blur-md bg-slate-950/60 p-3 sm:p-4 rounded-2xl border border-white/10 shadow-xl max-w-md">
+            <p className="hidden sm:block text-xs sm:text-sm text-zinc-200 backdrop-blur-md bg-slate-950/60 p-3 sm:p-4 rounded-2xl border border-white/10 shadow-xl max-w-md">
               {t('hero.atmosphereQuote')}
             </p>
           </div>
@@ -476,6 +484,13 @@ export const FestiventLandingPage: FC<FestiventLandingPageProps> = ({
             <span>{t('hero.scrollHint')}</span>
             <ChevronDown className="w-4 h-4 animate-bounce text-blue-400" />
           </div>
+        </div>
+
+        {/* Mobile Atmosphere Quote below video */}
+        <div className="sm:hidden mt-3 px-2">
+          <p className="text-xs text-zinc-300 backdrop-blur-md bg-slate-900/60 p-3 rounded-2xl border border-white/10 shadow-lg text-center italic">
+            "{t('hero.atmosphereQuote')}"
+          </p>
         </div>
       </div>
 
